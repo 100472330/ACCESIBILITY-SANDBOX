@@ -183,3 +183,20 @@ button:disabled {
   background: #f0fdf4;
   border: 1px solid #86efac;
 }
+
+.login-card {
+  max-width: 620px;
+  margin: 80px auto;
+  text-align: center;
+}
+
+.role-entry-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.role-entry-buttons button {
+  width: 100%;
+}

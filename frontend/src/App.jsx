@@ -431,7 +431,7 @@ function UserView({ experiments, onEvaluate }) {
 }
 
 function App() {
-  const [role, setRole] = useState("developer");
+  const [role, setRole] = useState("");
   const [experiments, setExperiments] = useState([]);
   const [publishedExperiments, setPublishedExperiments] = useState([]);
   const [error, setError] = useState("");
@@ -508,17 +508,36 @@ function App() {
     }
   }
 
+  if (!role) {
+    return (
+      <div className="app">
+        <section className="card login-card">
+          <h1>Accessibility Sandbox</h1>
+          <p>Selecciona el rol con el que quieres acceder al prototipo.</p>
+
+          <div className="role-entry-buttons">
+            <button onClick={() => setRole("developer")}>
+              Entrar como Developer
+            </button>
+            <button onClick={() => setRole("moderator")}>
+              Entrar como Moderator
+            </button>
+            <button onClick={() => setRole("user")}>
+              Entrar como User
+            </button>
+          </div>
+        </section>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <header className="header">
         <h1>Accessibility Sandbox</h1>
         <div className="role-switcher">
-          <label>Rol actual:</label>
-          <select value={role} onChange={(e) => setRole(e.target.value)}>
-            <option value="developer">Developer</option>
-            <option value="moderator">Moderator</option>
-            <option value="user">User</option>
-          </select>
+          <span>Rol actual: <strong>{role}</strong></span>
+          <button onClick={() => setRole("")}>Cambiar rol</button>
         </div>
       </header>
 
