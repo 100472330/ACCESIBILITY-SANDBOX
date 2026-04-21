@@ -12,6 +12,7 @@ function DeveloperView({ experiments, onCreate }) {
   });
   const [loading, setLoading] = useState(false);
   const [loadingResults, setLoadingResults] = useState({});
+  const [validationError, setValidationError] = useState("");
 
 
   function handleChange(event) {
@@ -23,27 +24,174 @@ function DeveloperView({ experiments, onCreate }) {
   }
 
   async function loadResults(id) {
-  try {
-    setLoadingResults((prev) => ({ ...prev, [id]: true }));
+    try {
+      setLoadingResults((prev) => ({ ...prev, [id]: true }));
 
-    const data = await getExperimentResults(id);
+      const data = await getExperimentResults(id);
 
-    setResults((prev) => ({
-      ...prev,
-      [id]: data,
-    }));
-  } catch (err) {
-    console.error(err);
-  } finally {
-    setLoadingResults((prev) => ({ ...prev, [id]: false }));
+      setResults((prev) => ({
+        ...prev,
+        [id]: data,
+      }));
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoadingResults((prev) => ({ ...prev, [id]: false }));
+    }
   }
+
+  function exportResultsToCSV(experimentId) {
+    const experimentResults = results[experimentId];
+
+    if (!experimentResults || !experimentResults.evaluations) return;
+
+    const headers = [
+      "id",
+      "clarity",
+      "comprehension",
+      "cognitive_load",
+      "preferred_variant",
+      "comment",
+    ];
+
+    const rows = experimentResults.evaluations.map((evaluation) => [
+      evaluation.id,
+      evaluation.clarity,
+      evaluation.comprehension,
+      evaluation.cognitive_load,
+      evaluation.preferred_variant || "",
+      `"${(evaluation.comment || "").replace(/"/g, '""')}"`,
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) => row.join(",")),
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `experiment-${experimentId}-results.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  }
+
+  function exportAggregatedResultsToCSV(experimentId) {
+    const experimentResults = results[experimentId];
+    const experiment = experiments.find((e) => e.id === experimentId);
+
+    if (!experimentResults || !experimentResults.evaluations) return;
+
+    const evaluations = experimentResults.evaluations;
+
+    let csvContent = "";
+
+    if (experiment?.type === "ab") {
+      const evalA = evaluations.filter((e) => e.preferred_variant === "A");
+      const evalB = evaluations.filter((e) => e.preferred_variant === "B");
+
+      const avgFor = (items, field) =>
+        items.length > 0
+          ? (
+              items.reduce((sum, item) => sum + Number(item[field] || 0), 0) /
+              items.length
+            ).toFixed(2)
+          : "0.00";
+
+      const rows = [
+        [
+          "A",
+          evalA.length,
+          avgFor(evalA, "clarity"),
+          avgFor(evalA, "comprehension"),
+          avgFor(evalA, "cognitive_load"),
+        ],
+        [
+          "B",
+          evalB.length,
+          avgFor(evalB, "clarity"),
+          avgFor(evalB, "comprehension"),
+          avgFor(evalB, "cognitive_load"),
+        ],
+      ];
+
+      csvContent = [
+        "variant,count,avg_clarity,avg_comprehension,avg_cognitive_load",
+        ...rows.map((row) => row.join(",")),
+      ].join("\n");
+    } else {
+      const avgFor = (items, field) =>
+        items.length > 0
+          ? (
+              items.reduce((sum, item) => sum + Number(item[field] || 0), 0) /
+              items.length
+            ).toFixed(2)
+          : "0.00";
+
+      const row = [
+        "all",
+        evaluations.length,
+        avgFor(evaluations, "clarity"),
+        avgFor(evaluations, "comprehension"),
+        avgFor(evaluations, "cognitive_load"),
+      ];
+
+      csvContent = [
+        "group,count,avg_clarity,avg_comprehension,avg_cognitive_load",
+        row.join(","),
+      ].join("\n");
+    }
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `experiment-${experimentId}-aggregated-results.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    URL.revokeObjectURL(url);
+  }
+
+  function containsUnsafeHtml(html) {
+  if (!html) return false;
+
+  const lowered = html.toLowerCase();
+
+  return (
+    lowered.includes("<script") ||
+    lowered.includes("onclick=") ||
+    lowered.includes("onerror=") ||
+    lowered.includes("onload=") ||
+    lowered.includes("onmouseover=")
+  );
 }
+
 
   async function handleSubmit(event) {
     event.preventDefault();
     setLoading(true);
+    setValidationError("");
 
     try {
+      const unsafeA = containsUnsafeHtml(form.variant_a_html);
+      const unsafeB =
+        form.type === "ab" ? containsUnsafeHtml(form.variant_b_html) : false;
+
+      if (unsafeA || unsafeB) {
+        setValidationError(
+          "El HTML contiene etiquetas o atributos no permitidos (por ejemplo <script> u onClick)."
+        );
+        return;
+      }
+
       await onCreate({
         title: form.title,
         description: form.description,
@@ -107,6 +255,10 @@ function DeveloperView({ experiments, onCreate }) {
               onChange={handleChange}
               required
             />
+          )}
+
+          {validationError && (
+            <p className="validation-error">{validationError}</p>
           )}
 
           <button type="submit" disabled={loading}>
@@ -223,6 +375,24 @@ function DeveloperView({ experiments, onCreate }) {
                       ? "Actualizar resultados"
                       : "Ver resultados"}
                   </button>
+
+                  {experimentResults && experimentResults.evaluations && experimentResults.evaluations.length > 0 && (
+                    <>
+                      <button
+                        className="export-btn"
+                        onClick={() => exportResultsToCSV(experiment.id)}
+                      >
+                        Exportar CSV
+                      </button>
+
+                      <button
+                        className="export-btn"
+                        onClick={() => exportAggregatedResultsToCSV(experiment.id)}
+                      >
+                        Exportar resumen CSV
+                      </button>
+                    </>
+                  )}
 
                   {experimentResults && (
                     <p><strong>{experimentResults.total}</strong> evaluaciones</p>

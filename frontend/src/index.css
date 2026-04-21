@@ -88,6 +88,8 @@ button:disabled {
 }
 
 .experiment-item {
+  margin-top: 10px;
+  margin-right: 10px;
   border: 1px solid #e5e7eb;
   border-radius: 10px;
   padding: 14px;
@@ -393,4 +395,21 @@ button:disabled {
   font-size: 12px;
   font-weight: 600;
   min-width: 0;
+}
+
+.experiment-item button + button {
+  margin-left: 10px;
+}
+
+.export-btn {
+  background: #111827;
+}
+
+.validation-error {
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  color: #991b1b;
+  padding: 10px;
+  border-radius: 8px;
+  margin: 8px 0;
 }
