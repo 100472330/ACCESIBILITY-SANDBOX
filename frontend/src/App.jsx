@@ -93,27 +93,38 @@ function App() {
   }
 
   if (!role) {
-    return (
-      <div className="app">
-        <section className="card login-card">
-          <h1>Accessibility Sandbox</h1>
-          <p>Selecciona el rol con el que quieres acceder al prototipo.</p>
+  return (
+    <div className="app">
+      <section className="card login-card">
+        <h1>Accessibility Sandbox</h1>
+        <p className="login-tag">
+          Entorno de evaluación para desarrollador, moderador y usuario final
+        </p>
+        <p className="login-subtitle">
+          Prototipo para evaluar accesibilidad cognitiva en componentes web
+          mediante comparación A/B y evaluación estructurada.
+        </p>
 
-          <div className="role-entry-buttons">
-            <button onClick={() => setRole("developer")}>
-              Entrar como Developer
-            </button>
-            <button onClick={() => setRole("moderator")}>
-              Entrar como Moderator
-            </button>
-            <button onClick={() => setRole("user")}>
-              Entrar como User
-            </button>
+        <div className="role-cards">
+          <div className="role-card" onClick={() => setRole("developer")}>
+            <h2>Developer</h2>
+            <p>Crea experimentos, define variantes y analiza resultados.</p>
           </div>
-        </section>
-      </div>
-    );
-  }
+
+          <div className="role-card" onClick={() => setRole("moderator")}>
+            <h2>Moderator</h2>
+            <p>Revisa experimentos pendientes y decide si se publican.</p>
+          </div>
+
+          <div className="role-card" onClick={() => setRole("user")}>
+            <h2>User</h2>
+            <p>Evalúa componentes publicados y aporta feedback cuantitativo y cualitativo.</p>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
 
   return (
     <div className="app">
