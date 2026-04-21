@@ -172,6 +172,37 @@ function DeveloperView({ experiments, onCreate }) {
                   ).toFixed(2);
                 }
               }
+
+              let recommendedVariant = null;
+              let recommendationReason = "";
+
+              if (countA > 0 || countB > 0) {
+                let scoreA = 0;
+                let scoreB = 0;
+
+                if (countA > countB) scoreA += 1;
+                if (countB > countA) scoreB += 1;
+
+                if (Number(avgA.clarity) > Number(avgB.clarity)) scoreA += 1;
+                if (Number(avgB.clarity) > Number(avgA.clarity)) scoreB += 1;
+
+                if (Number(avgA.comprehension) > Number(avgB.comprehension)) scoreA += 1;
+                if (Number(avgB.comprehension) > Number(avgA.comprehension)) scoreB += 1;
+
+                if (Number(avgA.cognitive_load) < Number(avgB.cognitive_load)) scoreA += 1;
+                if (Number(avgB.cognitive_load) < Number(avgA.cognitive_load)) scoreB += 1;
+
+                if (scoreA > scoreB) {
+                  recommendedVariant = "A";
+                  recommendationReason = "obtiene mejor equilibrio entre preferencia, claridad, comprensión y carga cognitiva";
+                } else if (scoreB > scoreA) {
+                  recommendedVariant = "B";
+                  recommendationReason = "obtiene mejor equilibrio entre preferencia, claridad, comprensión y carga cognitiva";
+                } else {
+                  recommendedVariant = "Empate";
+                  recommendationReason = "los resultados están equilibrados entre ambas variantes";
+                }
+              }
               
 
               return (
@@ -236,6 +267,16 @@ function DeveloperView({ experiments, onCreate }) {
                               <p>Carga cognitiva: {avgB.cognitive_load}</p>
                             </div>
                           )}
+                        </div>
+                      )}
+
+                      {recommendedVariant && (
+                        <div className="recommendation-box">
+                          <p><strong>Conclusión automática:</strong></p>
+                          <p>
+                            <strong>Variante recomendada:</strong> {recommendedVariant}
+                          </p>
+                          <p>{recommendationReason}</p>
                         </div>
                       )}
 
@@ -400,7 +441,7 @@ function UserView({ experiments, onEvaluate }) {
                   <iframe
                     title="variant-a"
                     className="preview-frame"
-                    sandbox=""
+                    sandbox="allow-forms allow-same-origin"
                     srcDoc={selectedExperiment.variant_a_html}
                   />
                 </div>
@@ -410,7 +451,7 @@ function UserView({ experiments, onEvaluate }) {
                   <iframe
                     title="variant-b"
                     className="preview-frame"
-                    sandbox=""
+                    sandbox="allow-forms allow-same-origin"
                     srcDoc={selectedExperiment.variant_b_html}
                   />
                 </div>

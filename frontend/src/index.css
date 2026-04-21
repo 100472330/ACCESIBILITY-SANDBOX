@@ -124,7 +124,7 @@ button:disabled {
 
 .preview-frame {
   width: 100%;
-  min-height: 220px;
+  min-height: 250px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   background: white;
@@ -255,5 +255,13 @@ button:disabled {
   padding: 10px;
   background: #eef2ff;
   border: 1px solid #c7d2fe;
+  border-radius: 8px;
+}
+
+.recommendation-box {
+  margin-top: 12px;
+  padding: 10px;
+  background: #ecfdf5;
+  border: 1px solid #86efac;
   border-radius: 8px;
 }
