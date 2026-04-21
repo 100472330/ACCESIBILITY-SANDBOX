@@ -130,25 +130,61 @@ function DeveloperView({ experiments, onCreate }) {
               let countB = 0;
               let percentA = 0;
               let percentB = 0;
+              
+
+              let avgA = { clarity: 0, comprehension: 0, cognitive_load: 0 };
+              let avgB = { clarity: 0, comprehension: 0, cognitive_load: 0 };
 
               if (experimentResults && experimentResults.evaluations) {
                 const evaluations = experimentResults.evaluations;
-
-                countA = evaluations.filter(e => e.preferred_variant === "A").length;
-                countB = evaluations.filter(e => e.preferred_variant === "B").length;
-
+                
+                countA = evaluations.filter((e) => e.preferred_variant === "A").length;
+                countB = evaluations.filter((e) => e.preferred_variant === "B").length;
+                
                 const totalAB = countA + countB;
-
+                
                 percentA = totalAB ? ((countA / totalAB) * 100).toFixed(1) : 0;
                 percentB = totalAB ? ((countB / totalAB) * 100).toFixed(1) : 0;
+                
+                const evalA = evaluations.filter((e) => e.preferred_variant === "A");
+                const evalB = evaluations.filter((e) => e.preferred_variant === "B");
+                if (evalA.length > 0) {
+                  avgA.clarity = (
+                    evalA.reduce((sum, e) => sum + e.clarity, 0) / evalA.length
+                  ).toFixed(2);
+                  avgA.comprehension = (
+                    evalA.reduce((sum, e) => sum + e.comprehension, 0) / evalA.length
+                  ).toFixed(2);
+                  avgA.cognitive_load = (
+                    evalA.reduce((sum, e) => sum + e.cognitive_load, 0) / evalA.length
+                  ).toFixed(2);
+                }
+
+                if (evalB.length > 0) {
+                  avgB.clarity = (
+                    evalB.reduce((sum, e) => sum + e.clarity, 0) / evalB.length
+                  ).toFixed(2);
+                  avgB.comprehension = (
+                    evalB.reduce((sum, e) => sum + e.comprehension, 0) / evalB.length
+                  ).toFixed(2);
+                  avgB.cognitive_load = (
+                    evalB.reduce((sum, e) => sum + e.cognitive_load, 0) / evalB.length
+                  ).toFixed(2);
+                }
               }
+              
 
               return (
                 <div key={experiment.id} className="experiment-item">
                   <h3>{experiment.title}</h3>
                   <p>{experiment.description || "Sin descripción"}</p>
                   <p><strong>Tipo:</strong> {experiment.type}</p>
-                  <p><strong>Estado:</strong> {experiment.status}</p>
+                  <p>
+                    <strong>Estado:</strong>{" "}
+                    <span className={`status-badge status-${experiment.status}`}>
+                      {experiment.status}
+                    </span>
+                  </p>
                   <p><strong>Autor:</strong> {experiment.created_by}</p>
 
                   <button onClick={() => loadResults(experiment.id)}>
@@ -156,11 +192,15 @@ function DeveloperView({ experiments, onCreate }) {
                   </button>
 
                   {experimentResults && (
+                    <p><strong>{experimentResults.total}</strong> evaluaciones</p>
+                  )}
+
+                  {experimentResults && (
                     <div className="results-box">
                       <p><strong>Total respuestas:</strong> {experimentResults.total}</p>
-                      <p><strong>Claridad media:</strong> {experimentResults.averages.clarity.toFixed(2)}</p>
-                      <p><strong>Comprensión media:</strong> {experimentResults.averages.comprehension.toFixed(2)}</p>
-                      <p><strong>Carga cognitiva media:</strong> {experimentResults.averages.cognitive_load.toFixed(2)}</p>
+                      <p><strong>Claridad media:</strong> {experimentResults.averages.clarity.toFixed(2) || "0.00"}</p>
+                      <p><strong>Comprensión media:</strong> {experimentResults.averages.comprehension.toFixed(2) || "0.00"}</p>
+                      <p><strong>Carga cognitiva media:</strong> {experimentResults.averages.cognitive_load.toFixed(2) || "0.00"}</p>
 
                       {(countA + countB) > 0 && (
                         <div className="ab-results">
@@ -174,6 +214,46 @@ function DeveloperView({ experiments, onCreate }) {
                           </p>
                         </div>
                       )}
+
+                      {(countA > 0 || countB > 0) && (
+                        <div className="ab-metrics">
+                          <p><strong>Detalle por variante:</strong></p>
+
+                          {countA > 0 && (
+                            <div>
+                              <p><strong>Variante A</strong></p>
+                              <p>Claridad: {avgA.clarity}</p>
+                              <p>Comprensión: {avgA.comprehension}</p>
+                              <p>Carga cognitiva: {avgA.cognitive_load}</p>
+                            </div>
+                          )}
+
+                          {countB > 0 && (
+                            <div>
+                              <p><strong>Variante B</strong></p>
+                              <p>Claridad: {avgB.clarity}</p>
+                              <p>Comprensión: {avgB.comprehension}</p>
+                              <p>Carga cognitiva: {avgB.cognitive_load}</p>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      { experimentResults.evaluations &&
+                        experimentResults.evaluations.some(
+                          (e) => e.comment && e.comment.trim() !== ""
+                        ) && (
+                          <div className="comments-box">
+                            <p><strong>Comentarios de usuarios:</strong></p>
+                            <ul>
+                              {experimentResults.evaluations
+                                .filter((e) => e.comment && e.comment.trim() !== "")
+                                .map((e, index) => (
+                                  <li key={index}>{e.comment}</li>
+                                ))}
+                            </ul>
+                          </div>
+                        )}
                     </div>
                   )}
               </div>
@@ -308,14 +388,14 @@ function UserView({ experiments, onEvaluate }) {
               <iframe
                 title="preview"
                 className="preview-frame"
-                sandbox=""
+                sandbox="allow-forms allow-same-origin"
                 srcDoc={selectedExperiment.variant_a_html}
               />
             )}
 
             {selectedExperiment.type === "ab" && (
               <div className="ab-container">
-                <div className="ab-variant">
+                <div className={`ab-variant ${form.preferred_variant === "A" ? "selected" : ""}`}>
                   <h3>Variante A</h3>
                   <iframe
                     title="variant-a"
@@ -325,7 +405,7 @@ function UserView({ experiments, onEvaluate }) {
                   />
                 </div>
 
-                <div className="ab-variant">
+                <div className={`ab-variant ${form.preferred_variant === "B" ? "selected" : ""}`}>
                   <h3>Variante B</h3>
                   <iframe
                     title="variant-b"
