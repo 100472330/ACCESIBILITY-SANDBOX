@@ -11,6 +11,7 @@ function DeveloperView({ experiments, onCreate }) {
     variant_b_html: "",
   });
   const [loading, setLoading] = useState(false);
+  const [loadingResults, setLoadingResults] = useState({});
 
 
   function handleChange(event) {
@@ -22,16 +23,21 @@ function DeveloperView({ experiments, onCreate }) {
   }
 
   async function loadResults(id) {
-    try {
-      const data = await getExperimentResults(id);
-      setResults((prev) => ({
-        ...prev,
-        [id]: data,
-      }));
-    } catch (err) {
-      console.error(err);
-    }
+  try {
+    setLoadingResults((prev) => ({ ...prev, [id]: true }));
+
+    const data = await getExperimentResults(id);
+
+    setResults((prev) => ({
+      ...prev,
+      [id]: data,
+    }));
+  } catch (err) {
+    console.error(err);
+  } finally {
+    setLoadingResults((prev) => ({ ...prev, [id]: false }));
   }
+}
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -211,7 +217,11 @@ function DeveloperView({ experiments, onCreate }) {
                   <p><strong>Autor:</strong> {experiment.created_by}</p>
 
                   <button onClick={() => loadResults(experiment.id)}>
-                    Ver resultados
+                    {loadingResults[experiment.id]
+                      ? "Cargando..."
+                      : results[experiment.id]
+                      ? "Actualizar resultados"
+                      : "Ver resultados"}
                   </button>
 
                   {experimentResults && (
@@ -220,23 +230,67 @@ function DeveloperView({ experiments, onCreate }) {
 
                   {experimentResults && (
                     <div className="results-box">
+                      {experimentResults.total === 0 && (
+                        <p>No hay evaluaciones todavía.</p>
+                      )}
                       <p><strong>Total respuestas:</strong> {experimentResults.total}</p>
-                      <p><strong>Claridad media:</strong> {experimentResults.averages.clarity.toFixed(2) || "0.00"}</p>
-                      <p><strong>Comprensión media:</strong> {experimentResults.averages.comprehension.toFixed(2) || "0.00"}</p>
-                      <p><strong>Carga cognitiva media:</strong> {experimentResults.averages.cognitive_load.toFixed(2) || "0.00"}</p>
+                      <div className="metric-block">
+                        <p><strong>Claridad media:</strong> {experimentResults.averages.clarity.toFixed(2) || "0.00"}</p>
+                        <div className="metric-bar">
+                          <div
+                            className="metric-fill"
+                            style={{ width: `${(experimentResults.averages.clarity / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
 
+                      <div className="metric-block">
+                        <p><strong>Comprensión media:</strong> {experimentResults.averages.comprehension.toFixed(2) || "0.00"}</p>
+                        <div className="metric-bar">
+                          <div
+                            className="metric-fill"
+                            style={{ width: `${(experimentResults.averages.comprehension / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="metric-block">
+                        <p><strong>Carga cognitiva media:</strong> {experimentResults.averages.cognitive_load.toFixed(2) || "0.00"}</p>
+                        <div className="metric-bar">
+                          <div
+                            className="metric-fill"
+                            style={{ width: `${(experimentResults.averages.cognitive_load / 5) * 100}%` }}
+                          />
+                        </div>
+                      </div>
                       {(countA + countB) > 0 && (
                         <div className="ab-results">
                           <p><strong>Resultados A/B:</strong></p>
                           <p>Variante A: {countA} votos ({percentA}%)</p>
                           <p>Variante B: {countB} votos ({percentB}%)</p>
+
+                          <div className="ab-bar">
+                            <div
+                              className="ab-bar-a"
+                              style={{ width: `${percentA}%` }}
+                            >
+                              {countA > 0 ? `${percentA}%` : ""}
+                            </div>
+                            <div
+                              className="ab-bar-b"
+                              style={{ width: `${percentB}%` }}
+                            >
+                              {countB > 0 ? `${percentB}%` : ""}
+                            </div>
+                          </div>
+
                           <p>
                             <strong>
                               Ganadora: {countA > countB ? "A" : countB > countA ? "B" : "Empate"}
                             </strong>
                           </p>
                         </div>
-                      )}
+                                              )}
 
                       {(countA > 0 || countB > 0) && (
                         <div className="ab-metrics">
