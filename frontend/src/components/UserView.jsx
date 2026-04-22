@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { buildPreviewHtml } from "../utils/previewHtml";
 
 function UserView({ experiments, onEvaluate }) {
   const [selectedExperimentId, setSelectedExperimentId] = useState(null);
@@ -80,7 +81,7 @@ function UserView({ experiments, onEvaluate }) {
                 title="preview"
                 className="preview-frame"
                 sandbox="allow-forms allow-same-origin"
-                srcDoc={selectedExperiment.variant_a_html}
+                srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
               />
             )}
 
@@ -92,7 +93,7 @@ function UserView({ experiments, onEvaluate }) {
                     title="variant-a"
                     className="preview-frame"
                     sandbox="allow-forms allow-same-origin"
-                    srcDoc={selectedExperiment.variant_a_html}
+                    srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
                   />
                 </div>
 
@@ -102,7 +103,7 @@ function UserView({ experiments, onEvaluate }) {
                     title="variant-b"
                     className="preview-frame"
                     sandbox="allow-forms allow-same-origin"
-                    srcDoc={selectedExperiment.variant_b_html}
+                    srcDoc={buildPreviewHtml(selectedExperiment.variant_b_html)}
                   />
                 </div>
               </div>
