@@ -14,6 +14,7 @@ function DeveloperView({ experiments, onCreate }) {
   const [loadingResults, setLoadingResults] = useState({});
   const [validationError, setValidationError] = useState("");
   const [activeTab, setActiveTab] = useState("");
+  const [openResults, setOpenResults] = useState({});
 
 
   function handleChange(event) {
@@ -26,19 +27,27 @@ function DeveloperView({ experiments, onCreate }) {
 
   async function loadResults(id) {
     try {
-      setLoadingResults((prev) => ({ ...prev, [id]: true }));
-
       const data = await getExperimentResults(id);
 
       setResults((prev) => ({
         ...prev,
         [id]: data,
       }));
+
+      setOpenResults((prev) => ({
+        ...prev,
+        [id]: true,
+      }));
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoadingResults((prev) => ({ ...prev, [id]: false }));
     }
+  }
+
+  function toggleResults(id) {
+    setOpenResults((prev) => ({
+      ...prev,
+      [id]: !prev[id],
+    }));
   }
 
   function exportResultsToCSV(experimentId) {
@@ -215,8 +224,41 @@ function DeveloperView({ experiments, onCreate }) {
     }
   }
 
+  const approvedCount = experiments.filter(
+    (experiment) => experiment.status === "approved"
+  ).length;
+
+  const pendingCount = experiments.filter(
+    (experiment) => experiment.status === "pending"
+  ).length;
+
+  const rejectedCount = experiments.filter(
+    (experiment) => experiment.status === "rejected"
+  ).length; 
+
   return (
     <>
+      {activeTab !== "" && (
+        <section className="card developer-stats">
+          <div className="developer-stats-grid">
+            <div className="developer-stat-card approved">
+              <h3>{approvedCount}</h3>
+              <p>Aprobados</p>
+            </div>
+
+            <div className="developer-stat-card pending">
+              <h3>{pendingCount}</h3>
+              <p>Pendientes</p>
+            </div>
+
+            <div className="developer-stat-card rejected">
+              <h3>{rejectedCount}</h3>
+              <p>Rechazados</p>
+            </div>
+          </div>
+        </section>
+      )}
+      
       {activeTab === "" && (
         <section className="card developer-home">
           <h2>Panel de desarrollador</h2>
@@ -442,7 +484,10 @@ function DeveloperView({ experiments, onCreate }) {
                   }
 
                   return (
-                    <div key={experiment.id} className="experiment-item">
+                    <div
+                      key={experiment.id}
+                      className={`experiment-item ${openResults[experiment.id] ? "expanded" : ""}`}
+                    >
                       <h3>{experiment.title}</h3>
                       <p>{experiment.description || "Sin descripción"}</p>
                       <p><strong>Tipo:</strong> {experiment.type}</p>
@@ -456,15 +501,24 @@ function DeveloperView({ experiments, onCreate }) {
                       </p>
                       <p><strong>Autor:</strong> {experiment.created_by}</p>
 
-                      <button onClick={() => loadResults(experiment.id)}>
-                        {loadingResults[experiment.id]
-                          ? "Cargando..."
-                          : results[experiment.id]
-                          ? "Actualizar resultados"
-                          : "Ver resultados"}
+                      <button
+                        onClick={() => {
+                          if (!results[experiment.id]) {
+                            loadResults(experiment.id);
+                          } else {
+                            toggleResults(experiment.id);
+                          }
+                        }}
+                      >
+                        {!results[experiment.id]
+                          ? "Ver resultados"
+                          : openResults[experiment.id]
+                          ? "Ocultar resultados"
+                          : "Mostrar resultados"}
                       </button>
 
                       {experimentResults &&
+                        openResults[experiment.id] &&
                         experimentResults.evaluations &&
                         experimentResults.evaluations.length > 0 && (
                           <>
@@ -477,20 +531,17 @@ function DeveloperView({ experiments, onCreate }) {
 
                             <button
                               className="export-btn"
-                              onClick={() =>
-                                exportAggregatedResultsToCSV(experiment.id)
-                              }
+                              onClick={() => exportAggregatedResultsToCSV(experiment.id)}
                             >
                               Exportar resumen CSV
                             </button>
                           </>
-                        )}
-
+                      )}
                       {experimentResults && (
                         <p><strong>{experimentResults.total}</strong> evaluaciones</p>
                       )}
 
-                      {experimentResults && (
+                      {experimentResults && openResults[experiment.id] &&(
                         <div className="results-box">
                           {experimentResults.total === 0 && (
                             <p>No hay evaluaciones todavía.</p>
