@@ -822,3 +822,35 @@ button:disabled {
   box-shadow: 0 0 6px rgba(0,0,0,0.15);
 }
 
+.results-summary {
+  display: flex;
+  gap: 24px;
+  justify-content: center;
+  align-items: center;
+  padding: 16px 20px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  margin: 12px 0 20px 0;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+
+}
+
+.summary-label {
+  font-size: 12px;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  align-self: center;
+}
+
+.summary-value {
+  font-size: 18px;
+  font-weight: 600;
+  align-self: center;
+}

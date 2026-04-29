@@ -540,6 +540,19 @@ function DeveloperView({ experiments, onCreate }) {
                     });
                   }
 
+                  let globalAverage = null;
+
+                  if (evaluations.length > 0) {
+                    const values = Object.values(questionAverages).filter(
+                      (v) => v !== null && v !== undefined
+                    );
+
+                    if (values.length > 0) {
+                      globalAverage =
+                        values.reduce((sum, v) => sum + v, 0) / values.length;
+                    }
+                  }
+
                   const sortedQuestions = [...standardQuestions].sort((a, b) => {
                     const valA = questionAverages[a.id] ?? 0;
                     const valB = questionAverages[b.id] ?? 0;
@@ -634,6 +647,37 @@ function DeveloperView({ experiments, onCreate }) {
                           )}
 
                           <p><strong>Total respuestas:</strong> {experimentResults.total}</p>
+
+                          {globalAverage !== null && (
+                            <div className="results-summary">
+                              <div className="summary-item">
+                                <span className="summary-label">Media global</span>
+                                <span className="summary-value">
+                                  {globalAverage.toFixed(2)} / 5
+                                </span>
+                              </div>
+
+                              <div className="summary-item">
+                                <span className="summary-label">Evaluaciones</span>
+                                <span className="summary-value">
+                                  {experimentResults.total}
+                                </span>
+                              </div>
+
+                              {experiment.type === "ab" && (countA + countB) > 0 && (
+                                <div className="summary-item">
+                                  <span className="summary-label">Preferencia</span>
+                                  <span className="summary-value">
+                                    {countA > countB
+                                      ? `A (${percentA}%)`
+                                      : countB > countA
+                                      ? `B (${percentB}%)`
+                                      : "Empate"}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
 
                           {evaluations.length > 0 && (
                             <div className="standard-results">
