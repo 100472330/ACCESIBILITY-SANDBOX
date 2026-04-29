@@ -32,6 +32,7 @@ function ModeratorView({ experiments, onUpdateStatus }) {
               <h3>{experiment.title}</h3>
               <p>{experiment.description || "Sin descripción"}</p>
               <p><strong>Tipo:</strong> {experiment.type}</p>
+              <p><strong>Categoría:</strong> {experiment.category || "Sin categoría"}</p>
               <p><strong>Estado:</strong> {experiment.status}</p>
 
               <button onClick={() => togglePreview(experiment.id)}>

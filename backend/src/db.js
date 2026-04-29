@@ -13,10 +13,12 @@ function initDb() {
         title TEXT NOT NULL,
         description TEXT,
         type TEXT NOT NULL,
+        category TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'draft',
         created_by TEXT NOT NULL,
         variant_a_html TEXT,
         variant_b_html TEXT,
+        custom_questions TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
@@ -30,6 +32,8 @@ function initDb() {
         cognitive_load INTEGER NOT NULL,
         preferred_variant TEXT,
         comment TEXT,
+        standard_answers TEXT,
+        custom_answers TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (experiment_id) REFERENCES experiments(id)
       )

@@ -19,20 +19,22 @@ app.post("/experiments", (req, res) => {
     title,
     description,
     type,
+    category,
     created_by,
     variant_a_html,
     variant_b_html,
+    custom_questions,
     status,
   } = req.body;
 
-  if (!title || !type || !created_by) {
+  if (!title || !type || !category || !created_by) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   const query = `
     INSERT INTO experiments
-    (title, description, type, status, created_by, variant_a_html, variant_b_html)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    (title, description, type, category, status, created_by, variant_a_html, variant_b_html, custom_questions)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.run(
@@ -41,10 +43,12 @@ app.post("/experiments", (req, res) => {
       title,
       description || "",
       type,
+      category,
       status || "draft",
       created_by,
       variant_a_html || "",
       variant_b_html || "",
+      JSON.stringify(custom_questions || []),
     ],
     function (err) {
       if (err) {
@@ -121,6 +125,8 @@ app.post("/evaluations", (req, res) => {
     cognitive_load,
     preferred_variant,
     comment,
+    standard_answers,
+    custom_answers,
   } = req.body;
 
   if (!experiment_id || !clarity || !comprehension || !cognitive_load) {
@@ -129,8 +135,8 @@ app.post("/evaluations", (req, res) => {
 
   const query = `
     INSERT INTO evaluations
-    (experiment_id, clarity, comprehension, cognitive_load, preferred_variant, comment)
-    VALUES (?, ?, ?, ?, ?, ?)
+    (experiment_id, clarity, comprehension, cognitive_load, preferred_variant, comment, standard_answers, custom_answers)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.run(
@@ -142,9 +148,12 @@ app.post("/evaluations", (req, res) => {
       cognitive_load,
       preferred_variant || null,
       comment || "",
+      JSON.stringify(standard_answers || {}),
+      JSON.stringify(custom_answers || {}),
     ],
     function (err) {
       if (err) {
+        console.error("ERROR SQL:", err);
         return res.status(500).json({ error: err.message });
       }
 
