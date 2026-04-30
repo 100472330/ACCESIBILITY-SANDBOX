@@ -55,13 +55,14 @@ function DeveloperView({ experiments, onCreate }) {
     variant_a_html: "",
     variant_b_html: "",
   });
+
   const [customQuestions, setCustomQuestions] = useState([]);
   const [newQuestion, setNewQuestion] = useState("");
   const [loading, setLoading] = useState(false);
   const [loadingResults, setLoadingResults] = useState({});
   const [validationError, setValidationError] = useState("");
   const [activeTab, setActiveTab] = useState("");
-  const [openResults, setOpenResults] = useState({});
+  const [selectedExperiment, setSelectedExperiment] = useState(null);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -80,11 +81,6 @@ function DeveloperView({ experiments, onCreate }) {
         ...prev,
         [id]: data,
       }));
-
-      setOpenResults((prev) => ({
-        ...prev,
-        [id]: true,
-      }));
     } catch (err) {
       console.error(err);
     } finally {
@@ -92,11 +88,120 @@ function DeveloperView({ experiments, onCreate }) {
     }
   }
 
-  function toggleResults(id) {
-    setOpenResults((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
+  async function openExperimentDetail(experiment) {
+    setSelectedExperiment(experiment);
+
+    if (!results[experiment.id]) {
+      await loadResults(experiment.id);
+    }
+  }
+
+  function getComputedResults(experiment) {
+    const experimentResults = results[experiment.id];
+    const evaluations = experimentResults?.evaluations || [];
+
+    let countA = 0;
+    let countB = 0;
+    let percentA = 0;
+    let percentB = 0;
+    const questionAverages = {};
+    const questionAveragesA = {};
+    const questionAveragesB = {};
+
+    const averageQuestion = (items, questionId) => {
+      const values = items
+        .map((evaluation) => safeParseObject(evaluation.standard_answers)[questionId])
+        .filter((value) => value !== undefined && value !== null && value !== "")
+        .map(Number);
+
+      if (values.length === 0) return null;
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    };
+
+    if (evaluations.length > 0) {
+      countA = evaluations.filter((e) => e.preferred_variant === "A").length;
+      countB = evaluations.filter((e) => e.preferred_variant === "B").length;
+
+      const totalAB = countA + countB;
+      percentA = totalAB ? ((countA / totalAB) * 100).toFixed(1) : 0;
+      percentB = totalAB ? ((countB / totalAB) * 100).toFixed(1) : 0;
+
+      standardQuestions.forEach((question) => {
+        questionAverages[question.id] = averageQuestion(evaluations, question.id);
+        questionAveragesA[question.id] = averageQuestion(
+          evaluations.filter((e) => e.preferred_variant === "A"),
+          question.id
+        );
+        questionAveragesB[question.id] = averageQuestion(
+          evaluations.filter((e) => e.preferred_variant === "B"),
+          question.id
+        );
+      });
+    }
+
+    let globalAverage = null;
+
+    if (evaluations.length > 0) {
+      const values = Object.values(questionAverages).filter(
+        (v) => v !== null && v !== undefined
+      );
+
+      if (values.length > 0) {
+        globalAverage = values.reduce((sum, v) => sum + v, 0) / values.length;
+      }
+    }
+
+    const sortedQuestions =
+      evaluations.length > 0
+        ? [...standardQuestions].sort((a, b) => {
+            const valA = questionAverages[a.id] ?? 0;
+            const valB = questionAverages[b.id] ?? 0;
+            return valA - valB;
+          })
+        : [];
+
+    const worstQuestion = sortedQuestions.length > 0 ? sortedQuestions[0] : null;
+    const worstValue = worstQuestion ? questionAverages[worstQuestion.id] : null;
+
+    const bestQuestion =
+      sortedQuestions.length > 0 ? sortedQuestions[sortedQuestions.length - 1] : null;
+    const bestValue = bestQuestion ? questionAverages[bestQuestion.id] : null;
+
+    let recommendedVariant = null;
+    let recommendationReason = "";
+
+    if (countA > 0 || countB > 0) {
+      if (countA > countB) {
+        recommendedVariant = "A";
+        recommendationReason = "ha recibido más preferencias por parte de los usuarios.";
+      } else if (countB > countA) {
+        recommendedVariant = "B";
+        recommendationReason = "ha recibido más preferencias por parte de los usuarios.";
+      } else {
+        recommendedVariant = "Empate";
+        recommendationReason = "ambas variantes han recibido el mismo número de preferencias.";
+      }
+    }
+
+    return {
+      experimentResults,
+      evaluations,
+      countA,
+      countB,
+      percentA,
+      percentB,
+      questionAverages,
+      questionAveragesA,
+      questionAveragesB,
+      globalAverage,
+      sortedQuestions,
+      worstQuestion,
+      worstValue,
+      bestQuestion,
+      bestValue,
+      recommendedVariant,
+      recommendationReason,
+    };
   }
 
   function exportResultsToCSV(experimentId) {
@@ -299,9 +404,349 @@ function DeveloperView({ experiments, onCreate }) {
   ).length;
 
   function getMetricColor(value) {
-    if (value >= 4) return "#22c55e"; // verde
-    if (value >= 3) return "#eab308"; // amarillo
-    return "#ef4444"; // rojo
+    if (value >= 4) return "#22c55e";
+    if (value >= 3) return "#eab308";
+    return "#ef4444";
+  }
+
+  function renderExperimentDetail() {
+    if (!selectedExperiment) return null;
+
+    const {
+      experimentResults,
+      evaluations,
+      countA,
+      countB,
+      percentA,
+      percentB,
+      questionAverages,
+      questionAveragesA,
+      questionAveragesB,
+      globalAverage,
+      sortedQuestions,
+      worstQuestion,
+      worstValue,
+      bestQuestion,
+      bestValue,
+      recommendedVariant,
+      recommendationReason,
+    } = getComputedResults(selectedExperiment);
+
+    const approvedQuestions = safeParseArray(selectedExperiment.approved_custom_questions);
+
+    return (
+      <>
+        <section className="card developer-subheader">
+          <div className="developer-subheader-row">
+            <div>
+              <h2>{selectedExperiment.title}</h2>
+              <p>{selectedExperiment.description || "Sin descripción"}</p>
+            </div>
+            <button onClick={() => setSelectedExperiment(null)}>
+              Volver a mis experimentos
+            </button>
+          </div>
+        </section>
+
+        <section className="developer-detail-grid">
+          <div className="card detail-block">
+            <h3>Información del experimento</h3>
+            <p><strong>Tipo:</strong> {selectedExperiment.type}</p>
+            <p><strong>Categoría:</strong> {selectedExperiment.category || "Sin categoría"}</p>
+            <p>
+              <strong>Estado:</strong>{" "}
+              <span className={`status-badge status-${selectedExperiment.status}`}>
+                {selectedExperiment.status}
+              </span>
+            </p>
+            <p><strong>Autor:</strong> {selectedExperiment.created_by}</p>
+
+            {approvedQuestions.length > 0 && (
+              <>
+                <p><strong>Preguntas aprobadas:</strong></p>
+                <ul className="approved-questions-list">
+                  {approvedQuestions.map((q, i) => (
+                    <li key={i}>{q}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+          </div>
+
+          <div className="card detail-block">
+            <h3>
+              {selectedExperiment.type === "ab"
+                ? "Componentes comparados"
+                : "Componente evaluado"}
+            </h3>
+
+            {selectedExperiment.type === "single" && (
+              <iframe
+                title={`developer-detail-preview-${selectedExperiment.id}`}
+                className="preview-frame"
+                sandbox="allow-forms allow-same-origin"
+                srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
+              />
+            )}
+
+            {selectedExperiment.type === "ab" && (
+              <div className="ab-container">
+                <div className="ab-variant">
+                  <h4>Variante A</h4>
+                  <iframe
+                    title={`developer-detail-preview-a-${selectedExperiment.id}`}
+                    className="preview-frame"
+                    sandbox="allow-forms allow-same-origin"
+                    srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
+                  />
+                </div>
+
+                <div className="ab-variant">
+                  <h4>Variante B</h4>
+                  <iframe
+                    title={`developer-detail-preview-b-${selectedExperiment.id}`}
+                    className="preview-frame"
+                    sandbox="allow-forms allow-same-origin"
+                    srcDoc={buildPreviewHtml(selectedExperiment.variant_b_html)}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="card detail-block">
+            <h3>Resumen global</h3>
+
+            {loadingResults[selectedExperiment.id] && <p>Cargando resultados...</p>}
+
+            {!loadingResults[selectedExperiment.id] && !experimentResults && (
+              <p>No se han cargado los resultados todavía.</p>
+            )}
+
+            {experimentResults && (
+              <>
+                <div className="results-summary">
+                  <div className="summary-item">
+                    <span className="summary-label">Evaluaciones</span>
+                    <span className="summary-value">{experimentResults.total}</span>
+                  </div>
+
+                  {globalAverage !== null && (
+                    <div className="summary-item">
+                      <span className="summary-label">Media global</span>
+                      <span className="summary-value">{globalAverage.toFixed(2)} / 5</span>
+                    </div>
+                  )}
+
+                  {selectedExperiment.type === "ab" && (countA + countB) > 0 && (
+                    <div className="summary-item">
+                      <span className="summary-label">Preferencia</span>
+                      <span className="summary-value">
+                        {countA > countB
+                          ? `A (${percentA}%)`
+                          : countB > countA
+                          ? `B (${percentB}%)`
+                          : "Empate"}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {experimentResults.total === 0 && (
+                  <p>No hay evaluaciones todavía.</p>
+                )}
+
+                {worstQuestion && worstValue !== null && (
+                  <div className="worst-question-box">
+                    <p><strong>Principal problema detectado:</strong></p>
+                    <p className="insight-subtext">
+                      Este aspecto puede estar dificultando la comprensión o interacción.
+                    </p>
+                    <p>{worstQuestion.text} ({worstValue.toFixed(2)} / 5)</p>
+                  </div>
+                )}
+
+                {bestQuestion && bestValue !== null && (
+                  <div className="best-question-box">
+                    <p><strong>Punto positivo principal:</strong></p>
+                    <p className="insight-subtext">
+                      Este aspecto está funcionando especialmente bien.
+                    </p>
+                    <p>{bestQuestion.text} ({bestValue.toFixed(2)} / 5)</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+
+          <div className="card detail-block">
+            <h3>Exportación</h3>
+
+            {experimentResults && evaluations.length > 0 ? (
+              <div className="detail-actions">
+                <button
+                  className="export-btn"
+                  onClick={() => exportResultsToCSV(selectedExperiment.id)}
+                >
+                  Exportar CSV
+                </button>
+
+                <button
+                  className="export-btn"
+                  onClick={() => exportAggregatedResultsToCSV(selectedExperiment.id)}
+                >
+                  Exportar resumen CSV
+                </button>
+              </div>
+            ) : (
+              <p>La exportación estará disponible cuando existan evaluaciones.</p>
+            )}
+          </div>
+
+          {experimentResults && evaluations.length > 0 && (
+            <>
+              <div className="card detail-block detail-block-wide">
+                <h3>Resultados por pregunta estándar</h3>
+
+                <div className="standard-results">
+                  {sortedQuestions.map((question) => {
+                    const value = questionAverages[question.id];
+                    if (value === null || value === undefined) return null;
+
+                    return (
+                      <div key={question.id} className="metric-block">
+                        <p>
+                          <strong>{question.text}</strong>{" "}
+                          {value.toFixed(2)} / 5
+                        </p>
+
+                        <div className="metric-bar">
+                          <div
+                            className="metric-fill"
+                            style={{
+                              width: `${(value / 5) * 100}%`,
+                              backgroundColor: getMetricColor(value),
+                            }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {selectedExperiment.type === "ab" && (countA + countB) > 0 && (
+                <div className="card detail-block detail-block-wide">
+                  <h3>Resultados A/B</h3>
+
+                  <p>Variante A: {countA} votos ({percentA}%)</p>
+                  <p>Variante B: {countB} votos ({percentB}%)</p>
+
+                  <div className="ab-bar">
+                    <div className="ab-bar-a" style={{ width: `${percentA}%` }}>
+                      {countA > 0 ? `${percentA}%` : ""}
+                    </div>
+                    <div className="ab-bar-b" style={{ width: `${percentB}%` }}>
+                      {countB > 0 ? `${percentB}%` : ""}
+                    </div>
+                  </div>
+
+                  <p>
+                    <strong>
+                      Ganadora: {countA > countB ? "A" : countB > countA ? "B" : "Empate"}
+                    </strong>
+                  </p>
+
+                  {(countA > 0 || countB > 0) && (
+                    <div className="ab-metrics">
+                      <p><strong>Detalle por variante:</strong></p>
+
+                      {countA > 0 && (
+                        <div>
+                          <p><strong>Variante A</strong></p>
+                          {sortedQuestions.map((question) => {
+                            const value = questionAveragesA[question.id];
+                            if (value === null || value === undefined) return null;
+                            return (
+                              <p key={question.id}>
+                                {question.id.toUpperCase()}: {value.toFixed(2)}
+                              </p>
+                            );
+                          })}
+                        </div>
+                      )}
+
+                      {countB > 0 && (
+                        <div>
+                          <p><strong>Variante B</strong></p>
+                          {sortedQuestions.map((question) => {
+                            const value = questionAveragesB[question.id];
+                            if (value === null || value === undefined) return null;
+                            return (
+                              <p key={question.id}>
+                                {question.id.toUpperCase()}: {value.toFixed(2)}
+                              </p>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {recommendedVariant && (
+                    <div className="recommendation-box">
+                      <p><strong>Conclusión automática:</strong></p>
+                      <p>
+                        <strong>Variante recomendada:</strong>{" "}
+                        {recommendedVariant}
+                      </p>
+                      <p>{recommendationReason}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {evaluations.some((e) => e.comment && e.comment.trim() !== "") && (
+                <div className="card detail-block detail-block-wide">
+                  <h3>Comentarios de usuarios</h3>
+                  <ul>
+                    {evaluations
+                      .filter((e) => e.comment && e.comment.trim() !== "")
+                      .map((e, index) => (
+                        <li key={index}>{e.comment}</li>
+                      ))}
+                  </ul>
+                </div>
+              )}
+
+              {evaluations.some((e) => e.custom_answers) && (
+                <div className="card detail-block detail-block-wide">
+                  <h3>Respuestas a preguntas personalizadas</h3>
+
+                  {evaluations.map((evaluation, index) => {
+                    const customAnswers = safeParseObject(evaluation.custom_answers);
+                    const entries = Object.entries(customAnswers);
+                    if (entries.length === 0) return null;
+
+                    return (
+                      <div key={index} className="custom-answer-item">
+                        <p><strong>Evaluación {index + 1}</strong></p>
+                        {entries.map(([question, answer]) => (
+                          <p key={question}>
+                            <strong>{question}</strong><br />
+                            {answer || "Sin respuesta"}
+                          </p>
+                        ))}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </>
+          )}
+        </section>
+      </>
+    );
   }
 
   return (
@@ -506,398 +951,77 @@ function DeveloperView({ experiments, onCreate }) {
 
       {activeTab === "list" && (
         <>
-          <section className="card developer-subheader">
-            <div className="developer-subheader-row">
-              <div>
-                <h2>Mis experimentos</h2>
-                <p>
-                  Revisa el estado de tus experimentos y consulta los resultados
-                  disponibles.
-                </p>
-              </div>
-              <button onClick={() => setActiveTab("")}>Volver al panel</button>
-            </div>
-          </section>
+          {!selectedExperiment && (
+            <>
+              <section className="card developer-subheader">
+                <div className="developer-subheader-row">
+                  <div>
+                    <h2>Mis experimentos</h2>
+                    <p>
+                      Revisa el estado de tus experimentos y consulta los resultados
+                      disponibles.
+                    </p>
+                  </div>
+                  <button onClick={() => setActiveTab("")}>Volver al panel</button>
+                </div>
+              </section>
 
-          <section className="card">
-            {experiments.length === 0 ? (
-              <p>No hay experimentos todavía.</p>
-            ) : (
-              <div className="experiment-list">
-                {experiments.map((experiment) => {
-                  const experimentResults = results[experiment.id];
-                  const evaluations = experimentResults?.evaluations || [];
-
-                  let countA = 0;
-                  let countB = 0;
-                  let percentA = 0;
-                  let percentB = 0;
-                  const questionAverages = {};
-                  const questionAveragesA = {};
-                  const questionAveragesB = {};
-
-                  if (evaluations.length > 0) {
-                    countA = evaluations.filter((e) => e.preferred_variant === "A").length;
-                    countB = evaluations.filter((e) => e.preferred_variant === "B").length;
-
-                    const totalAB = countA + countB;
-                    percentA = totalAB ? ((countA / totalAB) * 100).toFixed(1) : 0;
-                    percentB = totalAB ? ((countB / totalAB) * 100).toFixed(1) : 0;
-
-                    const averageQuestion = (items, questionId) => {
-                      const values = items
-                        .map((evaluation) => safeParseObject(evaluation.standard_answers)[questionId])
-                        .filter((value) => value !== undefined && value !== null && value !== "")
-                        .map(Number);
-
-                      if (values.length === 0) return null;
-                      return values.reduce((sum, value) => sum + value, 0) / values.length;
-                    };
-
-                    standardQuestions.forEach((question) => {
-                      questionAverages[question.id] = averageQuestion(evaluations, question.id);
-                      questionAveragesA[question.id] = averageQuestion(
-                        evaluations.filter((e) => e.preferred_variant === "A"),
-                        question.id
+              <section className="card">
+                {experiments.length === 0 ? (
+                  <p>No hay experimentos todavía.</p>
+                ) : (
+                  <div className="experiment-list">
+                    {experiments.map((experiment) => {
+                      const customQuestionsList = safeParseArray(experiment.custom_questions);
+                      const approvedQuestionsList = safeParseArray(
+                        experiment.approved_custom_questions
                       );
-                      questionAveragesB[question.id] = averageQuestion(
-                        evaluations.filter((e) => e.preferred_variant === "B"),
-                        question.id
-                      );
-                    });
-                  }
 
-                  let globalAverage = null;
-
-                  if (evaluations.length > 0) {
-                    const values = Object.values(questionAverages).filter(
-                      (v) => v !== null && v !== undefined
-                    );
-
-                    if (values.length > 0) {
-                      globalAverage =
-                        values.reduce((sum, v) => sum + v, 0) / values.length;
-                    }
-                  }
-
-                  const sortedQuestions = [...standardQuestions].sort((a, b) => {
-                    const valA = questionAverages[a.id] ?? 0;
-                    const valB = questionAverages[b.id] ?? 0;
-                    return valA - valB; // de menor a mayor (peor primero)
-                  });
-
-                  let recommendedVariant = null;
-                  let recommendationReason = "";
-
-                  if (countA > 0 || countB > 0) {
-                    if (countA > countB) {
-                      recommendedVariant = "A";
-                      recommendationReason = "ha recibido más preferencias por parte de los usuarios.";
-                    } else if (countB > countA) {
-                      recommendedVariant = "B";
-                      recommendationReason = "ha recibido más preferencias por parte de los usuarios.";
-                    } else {
-                      recommendedVariant = "Empate";
-                      recommendationReason = "ambas variantes han recibido el mismo número de preferencias.";
-                    }
-                  }
-
-                  const worstQuestion = sortedQuestions[0];
-                  const worstValue = worstQuestion
-                    ? questionAverages[worstQuestion.id]
-                    : null; 
-                  
-                  const bestQuestion = sortedQuestions[sortedQuestions.length - 1];
-                  const bestValue = bestQuestion
-                    ? questionAverages[bestQuestion.id]
-                    : null;
-
-                  return (
-                    <div
-                      key={experiment.id}
-                      className={`experiment-item ${openResults[experiment.id] ? "expanded" : ""}`}
-                    >
-                      <h3>{experiment.title}</h3>
-                      <p>{experiment.description || "Sin descripción"}</p>
-                      <p><strong>Tipo:</strong> {experiment.type}</p>
-                      <p><strong>Categoría:</strong> {experiment.category || "Sin categoría"}</p>
-                      {experiment.custom_questions && (
-                        <p>
-                          <strong>Preguntas personalizadas:</strong>{" "}
-                          {experiment.approved_custom_questions && (
-                            <ul className="approved-questions-list">
-                              {JSON.parse(experiment.approved_custom_questions || "[]").map((q, i) => (
-                                <li key={i}>{q}</li>
-                              ))}
-                            </ul>
-                          )}
-                        </p>
-                      )}
-                      <p>
-                        <strong>Estado:</strong>{" "}
-                        <span className={`status-badge status-${experiment.status}`}>
-                          {experiment.status}
-                        </span>
-                      </p>
-                      <p><strong>Autor:</strong> {experiment.created_by}</p>
-                      
-
-                      <button
-                        onClick={() => {
-                          if (!results[experiment.id]) {
-                            loadResults(experiment.id);
-                          } else {
-                            toggleResults(experiment.id);
-                          }
-                        }}
-                      >
-                        {loadingResults[experiment.id]
-                          ? "Cargando..."
-                          : !results[experiment.id]
-                          ? "Ver resultados"
-                          : openResults[experiment.id]
-                          ? "Ocultar resultados"
-                          : "Mostrar resultados"}
-                      </button>
-
-                      {experimentResults &&
-                        openResults[experiment.id] &&
-                        evaluations.length > 0 && (
-                          <>
-                            <button
-                              className="export-btn"
-                              onClick={() => exportResultsToCSV(experiment.id)}
-                            >
-                              Exportar CSV
-                            </button>
-
-                            <button
-                              className="export-btn"
-                              onClick={() => exportAggregatedResultsToCSV(experiment.id)}
-                            >
-                              Exportar resumen CSV
-                            </button>
-                          </>
-                        )}
-
-                      {experimentResults && (
-                        <p><strong>{experimentResults.total}</strong> evaluaciones</p>
-                      )}
-
-                      {experimentResults && openResults[experiment.id] && (
-                        <div className="results-box">
-                          {experimentResults.total === 0 && (
-                            <p>No hay evaluaciones todavía.</p>
-                          )}
-
-                          <p><strong>Total respuestas:</strong> {experimentResults.total}</p>
-
-                          {globalAverage !== null && (
-                            <>
-                              <div className="results-summary">
-                                <div className="summary-item">
-                                  <span className="summary-label">Media global</span>
-                                  <span className="summary-value">
-                                    {globalAverage.toFixed(2)} / 5
-                                  </span>
-                                </div>
-
-                                <div className="summary-item">
-                                  <span className="summary-label">Evaluaciones</span>
-                                  <span className="summary-value">
-                                    {experimentResults.total}
-                                  </span>
-                                </div>
-
-                                {experiment.type === "ab" && (countA + countB) > 0 && (
-                                  <div className="summary-item">
-                                    <span className="summary-label">Preferencia</span>
-                                    <span className="summary-value">
-                                      {countA > countB
-                                        ? `A (${percentA}%)`
-                                        : countB > countA
-                                        ? `B (${percentB}%)`
-                                        : "Empate"}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-
-                              {worstQuestion && worstValue !== null && (
-                                <div className="worst-question-box">
-                                  <p>
-                                    <strong>Principal problema detectado:</strong>
-                                  </p>
-                                  <p className="insight-subtext">
-                                    Este aspecto del componente puede estar dificultando la comprensión o interacción del usuario.
-                                  </p>
-                                  <p>
-                                    {worstQuestion.text} ({worstValue.toFixed(2)} / 5)
-                                  </p>
-                                </div>
-                              )}
-
-                              {bestQuestion && bestValue !== null && (
-                                <div className="best-question-box">
-                                  <p>
-                                    <strong>Punto positivo principal:</strong>
-                                  </p>
-                                  <p className="insight-subtext">
-                                    Este elemento del componente está funcionando correctamente y contribuye a una mejor experiencia.
-                                  </p>
-                                  <p>
-                                    {bestQuestion.text} ({bestValue.toFixed(2)} / 5)
-                                  </p>
-                                </div>
-                              )}
-                            </>
-                          )}
-
-                          {evaluations.length > 0 && (
-                            <div className="standard-results">
-                              <p><strong>Resultados por pregunta estándar:</strong></p>
-
-                              {sortedQuestions.map((question) => {
-                                const value = questionAverages[question.id];
-                                if (value === null || value === undefined) return null;
-
-                                return (
-                                  <div key={question.id} className="metric-block">
-                                    <p>
-                                      <strong>{question.text}</strong>{" "}
-                                      {value.toFixed(2)} / 5
-                                    </p>
-
-                                    <div className="metric-bar">
-                                      <div
-                                        className="metric-fill"
-                                        style={{
-                                          width: `${(value / 5) * 100}%`,
-                                          backgroundColor: getMetricColor(value),
-                                        }}
-                                      />
-                                    </div>
-                                  </div>
-                                );
-                              })}
+                      return (
+                        <div key={experiment.id} className="experiment-item">
+                          <div className="experiment-card-header">
+                            <div>
+                              <h3>{experiment.title}</h3>
+                              <p>{experiment.description || "Sin descripción"}</p>
                             </div>
-                          )}
 
-                          {(countA + countB) > 0 && (
-                            <div className="ab-results">
-                              <p><strong>Resultados A/B:</strong></p>
-                              <p>Variante A: {countA} votos ({percentA}%)</p>
-                              <p>Variante B: {countB} votos ({percentB}%)</p>
+                            <span className={`status-badge status-${experiment.status}`}>
+                              {experiment.status}
+                            </span>
+                          </div>
 
-                              <div className="ab-bar">
-                                <div
-                                  className="ab-bar-a"
-                                  style={{ width: `${percentA}%` }}
-                                >
-                                  {countA > 0 ? `${percentA}%` : ""}
-                                </div>
-                                <div
-                                  className="ab-bar-b"
-                                  style={{ width: `${percentB}%` }}
-                                >
-                                  {countB > 0 ? `${percentB}%` : ""}
-                                </div>
-                              </div>
+                          <div className="experiment-card-meta">
+                            <p><strong>Tipo:</strong> {experiment.type}</p>
+                            <p><strong>Categoría:</strong> {experiment.category || "Sin categoría"}</p>
+                            <p><strong>Autor:</strong> {experiment.created_by}</p>
+                            <p>
+                              <strong>Preguntas propuestas:</strong>{" "}
+                              {customQuestionsList.length}
+                            </p>
+                            <p>
+                              <strong>Preguntas aprobadas:</strong>{" "}
+                              {approvedQuestionsList.length}
+                            </p>
+                          </div>
 
-                              <p>
-                                <strong>
-                                  Ganadora: {countA > countB ? "A" : countB > countA ? "B" : "Empate"}
-                                </strong>
-                              </p>
-                            </div>
-                          )}
-
-                          {(countA > 0 || countB > 0) && (
-                            <div className="ab-metrics">
-                              <p><strong>Detalle por variante:</strong></p>
-
-                              {countA > 0 && (
-                                <div>
-                                  <p><strong>Variante A</strong></p>
-                                  {sortedQuestions.map((question) => {
-                                    const value = questionAveragesA[question.id];
-                                    if (value === null || value === undefined) return null;
-                                    return (
-                                      <p key={question.id}>{question.id.toUpperCase()}: {value.toFixed(2)}</p>
-                                    );
-                                  })}
-                                </div>
-                              )}
-
-                              {countB > 0 && (
-                                <div>
-                                  <p><strong>Variante B</strong></p>
-                                  {sortedQuestions.map((question) => {
-                                    const value = questionAveragesB[question.id];
-                                    if (value === null || value === undefined) return null;
-                                    return (
-                                      <p key={question.id}>{question.id.toUpperCase()}: {value.toFixed(2)}</p>
-                                    );
-                                  })}
-                                </div>
-                              )}
-                            </div>
-                          )}
-
-                          {recommendedVariant && (
-                            <div className="recommendation-box">
-                              <p><strong>Conclusión automática:</strong></p>
-                              <p>
-                                <strong>Variante recomendada:</strong>{" "}
-                                {recommendedVariant}
-                              </p>
-                              <p>{recommendationReason}</p>
-                            </div>
-                          )}
-
-                          {evaluations.some((e) => e.comment && e.comment.trim() !== "") && (
-                            <div className="comments-box">
-                              <p><strong>Comentarios de usuarios:</strong></p>
-                              <ul>
-                                {evaluations
-                                  .filter((e) => e.comment && e.comment.trim() !== "")
-                                  .map((e, index) => (
-                                    <li key={index}>{e.comment}</li>
-                                  ))}
-                              </ul>
-                            </div>
-                          )}
-
-                          {evaluations.some((e) => e.custom_answers) && (
-                            <div className="comments-box">
-                              <p><strong>Respuestas a preguntas personalizadas:</strong></p>
-                              {evaluations.map((evaluation, index) => {
-                                const customAnswers = safeParseObject(evaluation.custom_answers);
-                                const entries = Object.entries(customAnswers);
-                                if (entries.length === 0) return null;
-
-                                return (
-                                  <div key={index} className="custom-answer-item">
-                                    <p><strong>Evaluación {index + 1}</strong></p>
-                                    {entries.map(([question, answer]) => (
-                                      <p key={question}>
-                                        <strong>{question}</strong><br />
-                                        {answer || "Sin respuesta"}
-                                      </p>
-                                    ))}
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                          <button
+                            onClick={() => openExperimentDetail(experiment)}
+                            disabled={loadingResults[experiment.id]}
+                          >
+                            {loadingResults[experiment.id]
+                              ? "Cargando..."
+                              : "Ver resultados"}
+                          </button>
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </section>
+                      );
+                    })}
+                  </div>
+                )}
+              </section>
+            </>
+          )}
+
+          {selectedExperiment && renderExperimentDetail()}
         </>
       )}
     </>
@@ -905,4 +1029,3 @@ function DeveloperView({ experiments, onCreate }) {
 }
 
 export default DeveloperView;
-

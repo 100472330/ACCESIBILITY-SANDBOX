@@ -14,34 +14,47 @@ const standardQuestions = [
   { id: "q10", text: "La experiencia general resulta sencilla y poco demandante." },
 ];
 
+const initialForm = {
+  standard_answers: {
+    q1: 3,
+    q2: 3,
+    q3: 3,
+    q4: 3,
+    q5: 3,
+    q6: 3,
+    q7: 3,
+    q8: 3,
+    q9: 3,
+    q10: 3,
+  },
+  preferred_variant: "",
+  comment: "",
+};
+
+function safeParseArray(value) {
+  if (Array.isArray(value)) return value;
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 function UserView({ experiments, onEvaluate }) {
   const [selectedExperimentId, setSelectedExperimentId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [customAnswers, setCustomAnswers] = useState({});
-
-  const [form, setForm] = useState({
-    standard_answers: {
-      q1: 3,
-      q2: 3,
-      q3: 3,
-      q4: 3,
-      q5: 3,
-      q6: 3,
-      q7: 3,
-      q8: 3,
-      q9: 3,
-      q10: 3,
-    },
-    preferred_variant: "",
-    comment: "",
-  });
+  const [form, setForm] = useState(initialForm);
 
   const selectedExperiment = experiments.find(
     (experiment) => experiment.id === selectedExperimentId
   );
 
-  const customQuestions = selectedExperiment?.approved_custom_questions
-    ? JSON.parse(selectedExperiment.approved_custom_questions || "[]")
+  const customQuestions = selectedExperiment
+    ? safeParseArray(selectedExperiment.approved_custom_questions)
     : [];
 
   const categories = [
@@ -58,6 +71,23 @@ function UserView({ experiments, onEvaluate }) {
         (experiment) => (experiment.category || "other") === selectedCategory
       )
     : [];
+
+  function resetEvaluationForm() {
+    setForm(initialForm);
+    setCustomAnswers({});
+  }
+
+  function openExperiment(experimentId) {
+    setSelectedExperimentId(experimentId);
+    resetEvaluationForm();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function closeExperiment() {
+    setSelectedExperimentId(null);
+    resetEvaluationForm();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -102,25 +132,187 @@ function UserView({ experiments, onEvaluate }) {
       custom_answers: customAnswers,
     });
 
-    setForm({
-      standard_answers: {
-        q1: 3,
-        q2: 3,
-        q3: 3,
-        q4: 3,
-        q5: 3,
-        q6: 3,
-        q7: 3,
-        q8: 3,
-        q9: 3,
-        q10: 3,
-      },
-      preferred_variant: "",
-      comment: "",
-    });
+    resetEvaluationForm();
+    setSelectedExperimentId(null);
+  }
 
-    setCustomAnswers({});
+  if (selectedExperiment) {
+    return (
+      <>
+        <section className="card developer-subheader">
+          <div className="developer-subheader-row">
+            <div>
+              <h2>{selectedExperiment.title}</h2>
+              <p>{selectedExperiment.description || "Sin descripción"}</p>
+              <p>
+                <strong>Tipo:</strong> {selectedExperiment.type} ·{" "}
+                <strong>Categoría:</strong>{" "}
+                {selectedExperiment.category || "Sin categoría"}
+              </p>
+            </div>
 
+            <button onClick={closeExperiment}>
+              Volver a experimentos
+            </button>
+          </div>
+        </section>
+
+        <section className="card">
+          <h3>
+            {selectedExperiment.type === "ab"
+              ? "Componentes a comparar"
+              : "Componente a evaluar"}
+          </h3>
+
+          {selectedExperiment.type === "single" && (
+            <iframe
+              title={`user-preview-${selectedExperiment.id}`}
+              className="preview-frame user-full-preview"
+              sandbox="allow-forms allow-same-origin"
+              srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
+            />
+          )}
+
+          {selectedExperiment.type === "ab" && (
+            <div className="ab-container user-ab-full">
+              <div
+                className={`ab-variant ${
+                  form.preferred_variant === "A" ? "selected" : ""
+                }`}
+              >
+                <h4>Variante A</h4>
+                <iframe
+                  title={`user-preview-a-${selectedExperiment.id}`}
+                  className="preview-frame"
+                  sandbox="allow-forms allow-same-origin"
+                  srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
+                />
+              </div>
+
+              <div
+                className={`ab-variant ${
+                  form.preferred_variant === "B" ? "selected" : ""
+                }`}
+              >
+                <h4>Variante B</h4>
+                <iframe
+                  title={`user-preview-b-${selectedExperiment.id}`}
+                  className="preview-frame"
+                  sandbox="allow-forms allow-same-origin"
+                  srcDoc={buildPreviewHtml(selectedExperiment.variant_b_html)}
+                />
+              </div>
+            </div>
+          )}
+        </section>
+
+        <section className="card">
+          <h3>Evaluar experimento</h3>
+
+          <form onSubmit={handleSubmit} className="form">
+            <div className="standard-questions-block">
+              <h3>Evaluación estándar</h3>
+              <p className="evaluation-help">
+                Valora cada afirmación del 1 al 5, donde 1 significa “muy en desacuerdo”
+                y 5 significa “muy de acuerdo”.
+              </p>
+
+              {selectedExperiment.type === "ab" && (
+                <div className="standard-question-card">
+                  <p className="standard-question-text">
+                    ¿Qué variante prefieres?
+                  </p>
+
+                  <div className="ab-choice-inline">
+                    <label className="likert-option">
+                      <input
+                        type="radio"
+                        name="preferred_variant"
+                        value="A"
+                        checked={form.preferred_variant === "A"}
+                        onChange={handleChange}
+                      />
+                      <span>Variante A</span>
+                    </label>
+
+                    <label className="likert-option">
+                      <input
+                        type="radio"
+                        name="preferred_variant"
+                        value="B"
+                        checked={form.preferred_variant === "B"}
+                        onChange={handleChange}
+                      />
+                      <span>Variante B</span>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {standardQuestions.map((question) => (
+                <div key={question.id} className="standard-question-card">
+                  <p className="standard-question-text">{question.text}</p>
+
+                  <div className="likert-row">
+                    <span className="likert-end-label">Muy en desacuerdo</span>
+
+                    <div className="likert-scale">
+                      {[1, 2, 3, 4, 5].map((value) => (
+                        <label key={value} className="likert-option">
+                          <input
+                            type="radio"
+                            name={question.id}
+                            value={value}
+                            checked={form.standard_answers[question.id] === value}
+                            onChange={() =>
+                              handleStandardAnswerChange(question.id, value)
+                            }
+                          />
+                          <span>{value}</span>
+                        </label>
+                      ))}
+                    </div>
+
+                    <span className="likert-end-label">Muy de acuerdo</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <textarea
+              name="comment"
+              placeholder="Comentario opcional"
+              value={form.comment}
+              onChange={handleChange}
+            />
+
+            {customQuestions.length > 0 && (
+              <div className="custom-answers-block">
+                <h3>Preguntas específicas del experimento</h3>
+
+                {customQuestions.map((question, index) => (
+                  <label key={index}>
+                    {question}
+                    <textarea
+                      placeholder="Escribe tu respuesta..."
+                      value={customAnswers[question] || ""}
+                      onChange={(e) =>
+                        setCustomAnswers((prev) => ({
+                          ...prev,
+                          [question]: e.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                ))}
+              </div>
+            )}
+
+            <button type="submit">Enviar evaluación</button>
+          </form>
+        </section>
+      </>
+    );
   }
 
   return (
@@ -159,176 +351,37 @@ function UserView({ experiments, onEvaluate }) {
             {filteredExperiments.map((experiment) => (
               <div
                 key={experiment.id}
-                className={`experiment-item selectable ${
-                  selectedExperimentId === experiment.id ? "selected" : ""
-                }`}
-                onClick={() => {
-                  setSelectedExperimentId(experiment.id);
-                  setCustomAnswers({});
-                }}
+                className="experiment-item selectable"
+                onClick={() => openExperiment(experiment.id)}
               >
-                <h3>{experiment.title}</h3>
-                <p>{experiment.description || "Sin descripción"}</p>
-                <p><strong>Tipo:</strong> {experiment.type}</p>
+                <div className="experiment-card-header">
+                  <div>
+                    <h3>{experiment.title}</h3>
+                    <p>{experiment.description || "Sin descripción"}</p>
+                  </div>
+                </div>
+
+                <div className="experiment-card-meta">
+                  <p><strong>Tipo:</strong> {experiment.type}</p>
+                  <p><strong>Categoría:</strong> {experiment.category || "Sin categoría"}</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    openExperiment(experiment.id);
+                  }}
+                >
+                  Evaluar experimento
+                </button>
               </div>
             ))}
           </div>
         )}
       </section>
-
-      {selectedExperiment && (
-        <>
-          <section className="card">
-            <h2>
-              {selectedExperiment.type === "ab"
-                ? "Comparación de variantes"
-                : "Vista previa del componente"}
-            </h2>
-
-            {selectedExperiment.type === "single" && (
-              <iframe
-                title="preview"
-                className="preview-frame"
-                sandbox="allow-forms allow-same-origin"
-                srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
-              />
-            )}
-
-            {selectedExperiment.type === "ab" && (
-              <div className="ab-container">
-                <div
-                  className={`ab-variant ${
-                    form.preferred_variant === "A" ? "selected" : ""
-                  }`}
-                >
-                  <h3>Variante A</h3>
-                  <iframe
-                    title="variant-a"
-                    className="preview-frame"
-                    sandbox="allow-forms allow-same-origin"
-                    srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
-                  />
-                </div>
-
-                <div
-                  className={`ab-variant ${
-                    form.preferred_variant === "B" ? "selected" : ""
-                  }`}
-                >
-                  <h3>Variante B</h3>
-                  <iframe
-                    title="variant-b"
-                    className="preview-frame"
-                    sandbox="allow-forms allow-same-origin"
-                    srcDoc={buildPreviewHtml(selectedExperiment.variant_b_html)}
-                  />
-                </div>
-              </div>
-            )}
-          </section>
-
-          <section className="card">
-            <h2>Evaluar experimento</h2>
-
-            <form onSubmit={handleSubmit} className="form">
-              <div className="standard-questions-block">
-                <h3>Evaluación estándar</h3>
-                <p className="evaluation-help">
-                  Valora cada afirmación del 1 al 5, donde 1 significa “muy en desacuerdo”
-                  y 5 significa “muy de acuerdo”.
-                </p>
-
-                {standardQuestions.map((question) => (
-                  <div key={question.id} className="standard-question-card">
-                    <p className="standard-question-text">{question.text}</p>
-
-                    <div className="likert-row">
-                      <span className="likert-end-label">Muy en desacuerdo</span>
-
-                      <div className="likert-scale">
-                        {[1, 2, 3, 4, 5].map((value) => (
-                          <label key={value} className="likert-option">
-                            <input
-                              type="radio"
-                              name={question.id}
-                              value={value}
-                              checked={form.standard_answers[question.id] === value}
-                              onChange={() => handleStandardAnswerChange(question.id, value)}
-                            />
-                            <span>{value}</span>
-                          </label>
-                        ))}
-                      </div>
-
-                      <span className="likert-end-label">Muy de acuerdo</span>
-                    </div>
-                  </div>
-                  ))}
-              </div>
-
-              {selectedExperiment.type === "ab" && (
-                <div className="ab-choice">
-                  <p><strong>¿Qué variante prefieres?</strong></p>
-
-                  <label>
-                    <input
-                      type="radio"
-                      name="preferred_variant"
-                      value="A"
-                      checked={form.preferred_variant === "A"}
-                      onChange={handleChange}
-                    />
-                    Variante A
-                  </label>
-
-                  <label>
-                    <input
-                      type="radio"
-                      name="preferred_variant"
-                      value="B"
-                      checked={form.preferred_variant === "B"}
-                      onChange={handleChange}
-                    />
-                    Variante B
-                  </label>
-                </div>
-              )}
-
-              <textarea
-                name="comment"
-                placeholder="Comentario opcional"
-                value={form.comment}
-                onChange={handleChange}
-              />
-
-              {customQuestions.length > 0 && (
-                <div className="custom-answers-block">
-                  <h3>Preguntas específicas del experimento</h3>
-
-                  {customQuestions.map((question, index) => (
-                    <label key={index}>
-                      {question}
-                      <textarea
-                        placeholder="Escribe tu respuesta..."
-                        value={customAnswers[question] || ""}
-                        onChange={(e) =>
-                          setCustomAnswers((prev) => ({
-                            ...prev,
-                            [question]: e.target.value,
-                          }))
-                        }
-                      />
-                    </label>
-                  ))}
-                </div>
-              )}
-
-              <button type="submit">Enviar evaluación</button>
-            </form>
-          </section>
-        </>
-      )}
     </>
   );
 }
+
 export default UserView;
