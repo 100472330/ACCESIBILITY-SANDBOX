@@ -16,6 +16,7 @@ import UserView from "./components/UserView";
 
 function App() {
   const [role, setRole] = useState("");
+  const [publicPage, setPublicPage] = useState("home");
   const [experiments, setExperiments] = useState([]);
   const [publishedExperiments, setPublishedExperiments] = useState([]);
   const [error, setError] = useState("");
@@ -47,14 +48,13 @@ function App() {
   }, []);
 
   useEffect(() => {
-  if (successMessage) {
-    const timer = setTimeout(() => {
-      setSuccessMessage("");
-    }, 3000);
-
-    return () => clearTimeout(timer);
-  }
-}, [successMessage]);
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   async function handleCreateExperiment(payload) {
     try {
@@ -118,9 +118,50 @@ function App() {
     }
   }
 
-  if (!role) {
-  return (
-    <div className="app">
+  // 🔹 páginas públicas
+  function renderPublicPage() {
+    if (publicPage === "help") {
+      return (
+        <section className="card login-card">
+          <h1>Ayuda</h1>
+          <p>Selecciona un rol para empezar a usar la plataforma.</p>
+          <button onClick={() => setPublicPage("home")}>Volver</button>
+        </section>
+      );
+    }
+
+    if (publicPage === "contact") {
+      return (
+        <section className="card login-card">
+          <h1>Contacto</h1>
+          <p>Para soporte o dudas, contacta con el equipo.</p>
+          <button onClick={() => setPublicPage("home")}>Volver</button>
+        </section>
+      );
+    }
+
+    if (publicPage === "privacy") {
+      return (
+        <section className="card login-card">
+          <h1>Privacidad</h1>
+          <p>Solo se almacenan datos de evaluación para análisis.</p>
+          <button onClick={() => setPublicPage("home")}>Volver</button>
+        </section>
+      );
+    }
+
+    if (publicPage === "about") {
+      return (
+        <section className="card login-card">
+          <h1>About us</h1>
+          <p>Proyecto académico sobre accesibilidad cognitiva.</p>
+          <button onClick={() => setPublicPage("home")}>Volver</button>
+        </section>
+      );
+    }
+
+    // HOME
+    return (
       <section className="card login-card">
         <h1>Accessibility Sandbox</h1>
         <p className="login-tag">
@@ -134,62 +175,95 @@ function App() {
         <div className="role-cards">
           <div className="role-card" onClick={() => setRole("developer")}>
             <h2>Developer</h2>
-            <p>Crea experimentos, define variantes y analiza resultados.</p>
+            <p>Crea experimentos y analiza resultados.</p>
           </div>
 
           <div className="role-card" onClick={() => setRole("moderator")}>
             <h2>Moderator</h2>
-            <p>Revisa experimentos pendientes y decide si se publican.</p>
+            <p>Revisa experimentos y decide si se publican.</p>
           </div>
 
           <div className="role-card" onClick={() => setRole("user")}>
             <h2>User</h2>
-            <p>Evalúa componentes publicados y aporta feedback cuantitativo y cualitativo.</p>
+            <p>Evalúa componentes y aporta feedback.</p>
           </div>
         </div>
       </section>
-    </div>
-  );
-}
+    );
+  }
 
+  // 🔹 pantalla sin rol (landing + header + footer)
+  if (!role) {
+    return (
+      <div className="app public-app">
+        <header className="public-header">
+          <div
+            className="public-header-brand"
+            onClick={() => setPublicPage("home")}
+          >
+            Accessibility Sandbox
+          </div>
+
+          <nav className="public-nav">
+            <button onClick={() => setPublicPage("home")}>Inicio</button>
+          </nav>
+        </header>
+
+        <main className="public-main">{renderPublicPage()}</main>
+
+        <footer className="public-footer">
+          <button onClick={() => setPublicPage("help")}>Ayuda</button>
+          <button onClick={() => setPublicPage("contact")}>
+            Contacto
+          </button>
+          <button onClick={() => setPublicPage("privacy")}>
+            Privacidad
+          </button>
+          <button onClick={() => setPublicPage("about")}>
+            About us
+          </button>
+        </footer>
+      </div>
+    );
+  }
+
+  // 🔹 app principal
   return (
     <div className="app">
       <header className="header">
         <h1>Accessibility Sandbox</h1>
         <div className="role-switcher">
-          <span>Rol actual: <strong>{role}</strong></span>
+          <span>
+            Rol actual: <strong>{role}</strong>
+          </span>
           <button onClick={() => setRole("")}>Cambiar rol</button>
         </div>
       </header>
 
-      {successMessage && (
-        <p className="success">{successMessage}</p>
-      )}
-
+      {successMessage && <p className="success">{successMessage}</p>}
       {error && <p className="error">{error}</p>}
-
 
       {role === "developer" && (
         <section className="card role-banner developer-banner">
           <h2>Panel de desarrollador</h2>
-          <p>Crea experimentos, consulta su estado y analiza resultados.</p>
+          <p>Crea experimentos y analiza resultados.</p>
         </section>
       )}
 
       {role === "moderator" && (
         <section className="card role-banner moderator-banner">
           <h2>Panel de moderación</h2>
-          <p>Revisa experimentos pendientes y decide si se publican.</p>
+          <p>Revisa experimentos pendientes.</p>
         </section>
       )}
 
       {role === "user" && (
         <section className="card role-banner user-banner">
           <h2>Área de evaluación</h2>
-          <p>Explora experimentos publicados y envía tu evaluación.</p>
+          <p>Evalúa componentes publicados.</p>
         </section>
       )}
-      
+
       {role === "developer" && (
         <DeveloperView
           experiments={experiments}

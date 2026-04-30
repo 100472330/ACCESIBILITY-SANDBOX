@@ -1027,3 +1027,76 @@ button:disabled {
 .detail-block-wide {
   grid-column: 1 / -1;
 }
+
+.public-app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.public-header {
+  width: 100%;
+  padding: 1.25rem 3rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+.public-header-brand {
+  font-weight: 800;
+  font-size: 1.3rem;
+  cursor: pointer;
+  letter-spacing: -0.5px;
+}
+
+.public-nav {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.public-nav button,
+.public-footer button {
+  background: transparent;
+  color: #111827;
+  border: none;
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.public-nav button:hover,
+.public-footer button:hover {
+  color: #2563eb;
+}
+
+.public-main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+}
+
+.public-footer {
+  padding: 1.25rem 2rem;
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  background: #ffffff;
+}
+
+@media (max-width: 700px) {
+  .public-header {
+    padding: 1rem;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .public-footer {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+}
