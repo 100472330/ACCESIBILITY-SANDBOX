@@ -1100,3 +1100,66 @@ button:disabled {
     gap: 0.75rem;
   }
 }
+
+.custom-questions-card {
+  margin-top: 1rem;
+  padding: 1.25rem;
+  border-radius: 14px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+}
+
+.custom-questions-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.custom-questions-limit {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.custom-questions-subtext {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin: 0.5rem 0 1rem;
+}
+
+.add-question-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.add-question-row input {
+  flex: 1;
+}
+
+.custom-questions-list {
+  margin-top: 1rem;
+  list-style: none;
+  padding: 0;
+}
+
+.custom-question-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: white;
+  border: 1px solid #e5e7eb;
+  padding: 0.6rem 0.8rem;
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+}
+
+.remove-question-btn {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.remove-question-btn:hover {
+  opacity: 0.7;
+}

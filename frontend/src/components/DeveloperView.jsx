@@ -899,8 +899,17 @@ function DeveloperView({ experiments, onCreate }) {
                 </>
               )}
 
-              <div className="custom-questions-block">
-                <h3>Preguntas personalizadas (máx. 3)</h3>
+              <div className="custom-questions-card">
+                <div className="custom-questions-header">
+                  <h3>Preguntas personalizadas</h3>
+                  <span className="custom-questions-limit">
+                    {customQuestions.length}/3
+                  </span>
+                </div>
+
+                <p className="custom-questions-subtext">
+                  Añade preguntas específicas para complementar la evaluación estándar.
+                </p>
 
                 <div className="add-question-row">
                   <input
@@ -927,10 +936,12 @@ function DeveloperView({ experiments, onCreate }) {
                 {customQuestions.length > 0 && (
                   <ul className="custom-questions-list">
                     {customQuestions.map((q, idx) => (
-                      <li key={idx}>
-                        {q}
+                      <li key={idx} className="custom-question-item">
+                        <span>{q}</span>
+
                         <button
                           type="button"
+                          className="remove-question-btn"
                           onClick={() =>
                             setCustomQuestions((prev) =>
                               prev.filter((_, i) => i !== idx)
