@@ -828,7 +828,9 @@ function DeveloperView({ experiments, onCreate }) {
 
           <section className="card">
             <form onSubmit={handleSubmit} className="form">
+              <label htmlFor="title">Título</label>
               <input
+                id="title"
                 name="title"
                 placeholder="Título"
                 value={form.title}
@@ -836,19 +838,23 @@ function DeveloperView({ experiments, onCreate }) {
                 required
               />
 
+              <label htmlFor="description">Descripción</label>
               <textarea
+                id="description"
                 name="description"
                 placeholder="Descripción"
                 value={form.description}
                 onChange={handleChange}
               />
 
-              <select name="type" value={form.type} onChange={handleChange}>
+              <label htmlFor="type">Tipo</label>
+              <select id="type" name="type" value={form.type} onChange={handleChange}>
                 <option value="single">Single</option>
                 <option value="ab">A/B</option>
               </select>
 
-              <select name="category" value={form.category} onChange={handleChange}>
+              <label htmlFor="category">Categoría</label>
+              <select id="category" name="category" value={form.category} onChange={handleChange}>
                 <option value="form">Formulario</option>
                 <option value="login">Pantallas de acceso</option>
                 <option value="text">Texto</option>
@@ -857,7 +863,9 @@ function DeveloperView({ experiments, onCreate }) {
                 <option value="other">Otro</option>
               </select>
 
+              <label htmlFor="variant_a_html">HTML variante A</label>
               <textarea
+                id="variant_a_html"
                 name="variant_a_html"
                 placeholder="HTML variante A"
                 value={form.variant_a_html}
@@ -879,7 +887,9 @@ function DeveloperView({ experiments, onCreate }) {
 
               {form.type === "ab" && (
                 <>
+                  <label htmlFor="variant_b_html">HTML variante B</label>
                   <textarea
+                    id="variant_b_html"
                     name="variant_b_html"
                     placeholder="HTML variante B"
                     value={form.variant_b_html}
@@ -913,8 +923,10 @@ function DeveloperView({ experiments, onCreate }) {
                   Añade preguntas específicas para complementar la evaluación estándar.
                 </p>
 
+                <label htmlFor="newQuestionInput">Añadir pregunta personalizada</label>
                 <div className="add-question-row">
                   <input
+                    id="newQuestionInput"
                     type="text"
                     placeholder="Escribe una pregunta..."
                     value={newQuestion}
@@ -944,6 +956,7 @@ function DeveloperView({ experiments, onCreate }) {
                         <button
                           type="button"
                           className="remove-question-btn"
+                          aria-label="Eliminar pregunta"
                           onClick={() =>
                             setCustomQuestions((prev) =>
                               prev.filter((_, i) => i !== idx)
