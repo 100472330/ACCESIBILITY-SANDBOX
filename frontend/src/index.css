@@ -1023,3 +1023,7 @@ button:disabled {
     align-items: flex-start;
   }
 }
+
+.detail-block-wide {
+  grid-column: 1 / -1;
+}

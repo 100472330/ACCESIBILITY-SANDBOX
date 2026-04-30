@@ -449,7 +449,11 @@ function DeveloperView({ experiments, onCreate }) {
         </section>
 
         <section className="developer-detail-grid">
-          <div className="card detail-block">
+          <div
+            className={`card detail-block ${
+              selectedExperiment.type === "ab" ? "detail-block-wide" : ""
+            }`}
+>
             <h3>Información del experimento</h3>
             <p><strong>Tipo:</strong> {selectedExperiment.type}</p>
             <p><strong>Categoría:</strong> {selectedExperiment.category || "Sin categoría"}</p>
@@ -473,7 +477,11 @@ function DeveloperView({ experiments, onCreate }) {
             )}
           </div>
 
-          <div className="card detail-block">
+          <div
+            className={`card detail-block ${
+              selectedExperiment.type === "ab" ? "detail-block-wide" : ""
+            }`}
+          >
             <h3>
               {selectedExperiment.type === "ab"
                 ? "Componentes comparados"
