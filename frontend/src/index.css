@@ -208,6 +208,13 @@ button:disabled {
   background: var(--primary-soft);
 }
 
+.selectable:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
 .preview-frame {
   width: 100%;
   height: 400px;
@@ -425,6 +432,15 @@ button:disabled {
   transform: translateY(-3px);
   box-shadow: var(--shadow-lift);
   border-color: #93c5fd;
+}
+
+.role-card:focus-visible,
+.developer-menu-card:focus-visible,
+.category-card:focus-visible {
+  outline: 3px solid var(--primary);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14), var(--shadow-lift);
+  border-color: var(--primary);
 }
 
 .role-card h2 {
