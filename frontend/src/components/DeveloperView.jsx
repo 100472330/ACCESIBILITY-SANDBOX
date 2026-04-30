@@ -162,6 +162,21 @@ function DeveloperView({ experiments, onCreate }) {
 
     const worstQuestion = sortedQuestions.length > 0 ? sortedQuestions[0] : null;
     const worstValue = worstQuestion ? questionAverages[worstQuestion.id] : null;
+          
+    function generateRecommendation() {
+      if (!experimentResults || experimentResults.total === 0) return null;
+      if (!worstQuestion || worstValue === null || worstValue === undefined) return null;
+
+      if (worstValue < 3) {
+        return `Revisar prioritariamente este aspecto: "${worstQuestion.text}". La puntuación es baja (${worstValue.toFixed(2)} / 5), por lo que puede estar afectando a la comprensión del componente.`;
+      }
+
+      if (globalAverage !== null && globalAverage >= 4) {
+        return "El componente presenta una valoración global alta. Se recomienda mantener el diseño actual y revisar únicamente comentarios cualitativos.";
+      }
+
+      return `El componente tiene margen de mejora. El primer aspecto a revisar debería ser: "${worstQuestion.text}".`;
+    }
 
     const bestQuestion =
       sortedQuestions.length > 0 ? sortedQuestions[sortedQuestions.length - 1] : null;
@@ -432,6 +447,19 @@ function DeveloperView({ experiments, onCreate }) {
       recommendationReason,
     } = getComputedResults(selectedExperiment);
 
+    function generateRecommendation() {
+      if (!experimentResults || experimentResults.total === 0) return null;
+      if (!worstQuestion || worstValue === null || worstValue === undefined) return null;
+
+      if (selectedExperiment.type === "ab" && countA !== countB) {
+        const winner = countA > countB ? "A" : "B";
+
+        return `La variante ${winner} es preferida por los usuarios, pero existe una debilidad clara en: "${worstQuestion.text.toLowerCase()}".`;
+      }
+
+      return `El principal problema detectado está relacionado con: "${worstQuestion.text.toLowerCase()}".`;
+    }
+
     const approvedQuestions = safeParseArray(selectedExperiment.approved_custom_questions);
 
     return (
@@ -532,7 +560,13 @@ function DeveloperView({ experiments, onCreate }) {
             )}
 
             {experimentResults && (
-              <>
+              <> 
+                {generateRecommendation() && (
+                  <div className="insight-main">
+                    <p><strong>Recomendaciones principales</strong></p>
+                    <p>{generateRecommendation()}</p>
+                  </div>
+                )}
                 <div className="results-summary">
                   <div className="summary-item">
                     <span className="summary-label">Evaluaciones</span>
