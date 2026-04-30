@@ -1,5 +1,6 @@
 const API_BASE_URL = "http://localhost:4000";
 
+
 export async function getExperiments() {
   const response = await fetch(`${API_BASE_URL}/experiments`);
   if (!response.ok) {
@@ -69,5 +70,39 @@ export async function getExperimentResults(id) {
   if (!response.ok) {
     throw new Error("Failed to fetch results");
   }
+  return response.json();
+}
+
+export async function updateExperimentCategory(id, category) {
+  const response = await fetch(`${API_BASE_URL}/experiments/${id}/category`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ category }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Error updating experiment category");
+  }
+
+  return response.json();
+}
+
+export async function updateApprovedQuestions(id, approvedQuestions) {
+  const response = await fetch(`${API_BASE_URL}/experiments/${id}/approved-questions`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      approved_custom_questions: approvedQuestions,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new Error("Error updating approved questions");
+  }
+
   return response.json();
 }

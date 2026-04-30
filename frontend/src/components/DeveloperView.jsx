@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { getExperimentResults } from "../api";
+import { buildPreviewHtml } from "../utils/previewHtml";
 
 const standardQuestions = [
   { id: "q1", text: "El propósito del componente se entiende rápidamente." },
@@ -409,14 +410,40 @@ function DeveloperView({ experiments, onCreate }) {
                 required
               />
 
+              {form.variant_a_html.trim() && (
+                <div className="developer-preview-block">
+                  <h3>Vista previa variante A</h3>
+                  <iframe
+                    title="developer-preview-a"
+                    className="preview-frame"
+                    sandbox="allow-forms allow-same-origin"
+                    srcDoc={buildPreviewHtml(form.variant_a_html)}
+                  />
+                </div>
+              )}
+
               {form.type === "ab" && (
-                <textarea
-                  name="variant_b_html"
-                  placeholder="HTML variante B"
-                  value={form.variant_b_html}
-                  onChange={handleChange}
-                  required
-                />
+                <>
+                  <textarea
+                    name="variant_b_html"
+                    placeholder="HTML variante B"
+                    value={form.variant_b_html}
+                    onChange={handleChange}
+                    required
+                  />
+
+                  {form.variant_b_html.trim() && (
+                    <div className="developer-preview-block">
+                      <h3>Vista previa variante B</h3>
+                      <iframe
+                        title="developer-preview-b"
+                        className="preview-frame"
+                        sandbox="allow-forms allow-same-origin"
+                        srcDoc={buildPreviewHtml(form.variant_b_html)}
+                      />
+                    </div>
+                  )}
+                </>
               )}
 
               <div className="custom-questions-block">
@@ -575,6 +602,16 @@ function DeveloperView({ experiments, onCreate }) {
                     }
                   }
 
+                  const worstQuestion = sortedQuestions[0];
+                  const worstValue = worstQuestion
+                    ? questionAverages[worstQuestion.id]
+                    : null; 
+                  
+                  const bestQuestion = sortedQuestions[sortedQuestions.length - 1];
+                  const bestValue = bestQuestion
+                    ? questionAverages[bestQuestion.id]
+                    : null;
+
                   return (
                     <div
                       key={experiment.id}
@@ -587,7 +624,13 @@ function DeveloperView({ experiments, onCreate }) {
                       {experiment.custom_questions && (
                         <p>
                           <strong>Preguntas personalizadas:</strong>{" "}
-                          {safeParseArray(experiment.custom_questions).length}
+                          {experiment.approved_custom_questions && (
+                            <ul className="approved-questions-list">
+                              {JSON.parse(experiment.approved_custom_questions || "[]").map((q, i) => (
+                                <li key={i}>{q}</li>
+                              ))}
+                            </ul>
+                          )}
                         </p>
                       )}
                       <p>
@@ -597,6 +640,7 @@ function DeveloperView({ experiments, onCreate }) {
                         </span>
                       </p>
                       <p><strong>Autor:</strong> {experiment.created_by}</p>
+                      
 
                       <button
                         onClick={() => {
@@ -649,34 +693,64 @@ function DeveloperView({ experiments, onCreate }) {
                           <p><strong>Total respuestas:</strong> {experimentResults.total}</p>
 
                           {globalAverage !== null && (
-                            <div className="results-summary">
-                              <div className="summary-item">
-                                <span className="summary-label">Media global</span>
-                                <span className="summary-value">
-                                  {globalAverage.toFixed(2)} / 5
-                                </span>
-                              </div>
-
-                              <div className="summary-item">
-                                <span className="summary-label">Evaluaciones</span>
-                                <span className="summary-value">
-                                  {experimentResults.total}
-                                </span>
-                              </div>
-
-                              {experiment.type === "ab" && (countA + countB) > 0 && (
+                            <>
+                              <div className="results-summary">
                                 <div className="summary-item">
-                                  <span className="summary-label">Preferencia</span>
+                                  <span className="summary-label">Media global</span>
                                   <span className="summary-value">
-                                    {countA > countB
-                                      ? `A (${percentA}%)`
-                                      : countB > countA
-                                      ? `B (${percentB}%)`
-                                      : "Empate"}
+                                    {globalAverage.toFixed(2)} / 5
                                   </span>
                                 </div>
+
+                                <div className="summary-item">
+                                  <span className="summary-label">Evaluaciones</span>
+                                  <span className="summary-value">
+                                    {experimentResults.total}
+                                  </span>
+                                </div>
+
+                                {experiment.type === "ab" && (countA + countB) > 0 && (
+                                  <div className="summary-item">
+                                    <span className="summary-label">Preferencia</span>
+                                    <span className="summary-value">
+                                      {countA > countB
+                                        ? `A (${percentA}%)`
+                                        : countB > countA
+                                        ? `B (${percentB}%)`
+                                        : "Empate"}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {worstQuestion && worstValue !== null && (
+                                <div className="worst-question-box">
+                                  <p>
+                                    <strong>Principal problema detectado:</strong>
+                                  </p>
+                                  <p className="insight-subtext">
+                                    Este aspecto del componente puede estar dificultando la comprensión o interacción del usuario.
+                                  </p>
+                                  <p>
+                                    {worstQuestion.text} ({worstValue.toFixed(2)} / 5)
+                                  </p>
+                                </div>
                               )}
-                            </div>
+
+                              {bestQuestion && bestValue !== null && (
+                                <div className="best-question-box">
+                                  <p>
+                                    <strong>Punto positivo principal:</strong>
+                                  </p>
+                                  <p className="insight-subtext">
+                                    Este elemento del componente está funcionando correctamente y contribuye a una mejor experiencia.
+                                  </p>
+                                  <p>
+                                    {bestQuestion.text} ({bestValue.toFixed(2)} / 5)
+                                  </p>
+                                </div>
+                              )}
+                            </>
                           )}
 
                           {evaluations.length > 0 && (

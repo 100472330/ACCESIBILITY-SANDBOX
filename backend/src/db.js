@@ -19,6 +19,7 @@ function initDb() {
         variant_a_html TEXT,
         variant_b_html TEXT,
         custom_questions TEXT,
+        approved_custom_questions TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);

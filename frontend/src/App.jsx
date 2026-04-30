@@ -5,6 +5,8 @@ import {
   createExperiment,
   updateExperimentStatus,
   createEvaluation,
+  updateExperimentCategory,
+  updateApprovedQuestions,
 } from "./api";
 import "./index.css";
 
@@ -79,6 +81,30 @@ function App() {
     } catch (err) {
       console.error(err);
       setError("Error actualizando el estado");
+    }
+  }
+
+  async function handleUpdateCategory(id, category) {
+    try {
+      await updateExperimentCategory(id, category);
+      setSuccessMessage("Categoría actualizada correctamente");
+      await loadExperiments();
+      await loadPublishedExperiments();
+    } catch (err) {
+      console.error(err);
+      setError("Error actualizando la categoría");
+    }
+  }
+
+  async function handleUpdateApprovedQuestions(id, approvedQuestions) {
+    try {
+      await updateApprovedQuestions(id, approvedQuestions);
+      setSuccessMessage("Preguntas aprobadas actualizadas correctamente");
+      await loadExperiments();
+      await loadPublishedExperiments();
+    } catch (err) {
+      console.error(err);
+      setError("Error actualizando las preguntas aprobadas");
     }
   }
 
@@ -175,6 +201,8 @@ function App() {
         <ModeratorView
           experiments={experiments}
           onUpdateStatus={handleUpdateStatus}
+          onUpdateCategory={handleUpdateCategory}
+          onUpdateApprovedQuestions={handleUpdateApprovedQuestions}
         />
       )}
 

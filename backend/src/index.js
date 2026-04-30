@@ -211,3 +211,57 @@ app.get("/experiments/:id/results", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);
 });
+
+app.patch("/experiments/:id/category", (req, res) => {
+  const { id } = req.params;
+  const { category } = req.body;
+
+  if (!category) {
+    return res.status(400).json({ error: "Category is required" });
+  }
+
+  const query = `
+    UPDATE experiments
+    SET category = ?
+    WHERE id = ?
+  `;
+
+  db.run(query, [category, id], function (err) {
+    if (err) {
+      console.error("ERROR updating category:", err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    res.json({
+      message: "Category updated successfully",
+      changes: this.changes,
+    });
+  });
+});
+
+app.patch("/experiments/:id/approved-questions", (req, res) => {
+  const { id } = req.params;
+  const { approved_custom_questions } = req.body;
+
+  const questions = Array.isArray(approved_custom_questions)
+    ? approved_custom_questions
+    : [];
+
+  const query = `
+    UPDATE experiments
+    SET approved_custom_questions = ?
+    WHERE id = ?
+  `;
+
+  db.run(query, [JSON.stringify(questions), id], function (err) {
+    if (err) {
+      console.error("ERROR updating approved questions:", err);
+      return res.status(500).json({ error: err.message });
+    }
+
+    res.json({
+      message: "Approved questions updated successfully",
+      changes: this.changes,
+    });
+  });
+});

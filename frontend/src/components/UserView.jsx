@@ -40,8 +40,8 @@ function UserView({ experiments, onEvaluate }) {
     (experiment) => experiment.id === selectedExperimentId
   );
 
-  const customQuestions = selectedExperiment?.custom_questions
-    ? JSON.parse(selectedExperiment.custom_questions || "[]")
+  const customQuestions = selectedExperiment?.approved_custom_questions
+    ? JSON.parse(selectedExperiment.approved_custom_questions || "[]")
     : [];
 
   const categories = [
