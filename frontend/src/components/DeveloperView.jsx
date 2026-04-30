@@ -788,7 +788,8 @@ function DeveloperView({ experiments, onCreate }) {
           </p>
 
           <div className="developer-menu-cards">
-            <div
+            <button
+              type="button"
               className="developer-menu-card"
               onClick={() => setActiveTab("create")}
             >
@@ -797,9 +798,10 @@ function DeveloperView({ experiments, onCreate }) {
                 Define un nuevo experimento, configura sus variantes y envíalo a
                 moderación.
               </p>
-            </div>
+            </button>
 
-            <div
+            <button
+              type="button"
               className="developer-menu-card"
               onClick={() => setActiveTab("list")}
             >
@@ -807,7 +809,7 @@ function DeveloperView({ experiments, onCreate }) {
               <p>
                 Consulta el estado de tus experimentos y analiza sus resultados.
               </p>
-            </div>
+            </button>
           </div>
         </section>
       )}

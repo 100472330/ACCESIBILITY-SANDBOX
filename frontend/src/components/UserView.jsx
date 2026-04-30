@@ -83,6 +83,13 @@ function UserView({ experiments, onEvaluate }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function handleExperimentKeyDown(event, experimentId) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openExperiment(experimentId);
+    }
+  }
+
   function closeExperiment() {
     setSelectedExperimentId(null);
     resetEvaluationForm();
@@ -325,7 +332,8 @@ function UserView({ experiments, onEvaluate }) {
 
         <div className="category-card-grid">
           {categories.map((category) => (
-            <div
+            <button
+              type="button"
               key={category.value}
               className={`category-card ${
                 selectedCategory === category.value ? "active-category-card" : ""
@@ -336,7 +344,7 @@ function UserView({ experiments, onEvaluate }) {
               }}
             >
               <h3>{category.label}</h3>
-            </div>
+            </button>
           ))}
         </div>
       </section>
@@ -353,6 +361,9 @@ function UserView({ experiments, onEvaluate }) {
                 key={experiment.id}
                 className="experiment-item selectable"
                 onClick={() => openExperiment(experiment.id)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(event) => handleExperimentKeyDown(event, experiment.id)}
               >
                 <div className="experiment-card-header">
                   <div>

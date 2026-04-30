@@ -173,20 +173,32 @@ function App() {
         </p>
 
         <div className="role-cards">
-          <div className="role-card" onClick={() => setRole("developer")}>
+          <button
+            type="button"
+            className="role-card"
+            onClick={() => setRole("developer")}
+          >
             <h2>Developer</h2>
             <p>Crea experimentos y analiza resultados.</p>
-          </div>
+          </button>
 
-          <div className="role-card" onClick={() => setRole("moderator")}>
+          <button
+            type="button"
+            className="role-card"
+            onClick={() => setRole("moderator")}
+          >
             <h2>Moderator</h2>
             <p>Revisa experimentos y decide si se publican.</p>
-          </div>
+          </button>
 
-          <div className="role-card" onClick={() => setRole("user")}>
+          <button
+            type="button"
+            className="role-card"
+            onClick={() => setRole("user")}
+          >
             <h2>User</h2>
             <p>Evalúa componentes y aporta feedback.</p>
-          </div>
+          </button>
         </div>
       </section>
     );

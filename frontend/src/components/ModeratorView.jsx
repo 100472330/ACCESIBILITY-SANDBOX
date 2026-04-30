@@ -73,7 +73,8 @@ function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdate
 
         <div className="category-card-grid">
           {categories.map((category) => (
-            <div
+            <button
+              type="button"
               key={category.value}
               className={`category-card ${
                 selectedCategory === category.value ? "active-category-card" : ""
@@ -81,7 +82,7 @@ function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdate
               onClick={() => setSelectedCategory(category.value)}
             >
               <h3>{category.label}</h3>
-            </div>
+            </button>
           ))}
         </div>
       </section>
