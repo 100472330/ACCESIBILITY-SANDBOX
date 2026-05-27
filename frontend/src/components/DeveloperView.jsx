@@ -63,6 +63,7 @@ function DeveloperView({ experiments, onCreate }) {
   const [validationError, setValidationError] = useState("");
   const [activeTab, setActiveTab] = useState("");
   const [selectedExperiment, setSelectedExperiment] = useState(null);
+  const [showConfirmCreate, setShowConfirmCreate] = useState(false);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -390,6 +391,42 @@ function DeveloperView({ experiments, onCreate }) {
         variant_b_html: form.type === "ab" ? form.variant_b_html : "",
         custom_questions: customQuestions,
       });
+
+      setForm({
+        title: "",
+        description: "",
+        type: "single",
+        category: "form",
+        variant_a_html: "",
+        variant_b_html: "",
+      });
+      setCustomQuestions([]);
+      setNewQuestion("");
+    } finally {
+      setLoading(false);
+    }
+
+   setShowConfirmCreate(true);
+
+  }
+
+  async function confirmCreateExperiment() {
+    setLoading(true);
+
+    try {
+      await onCreate({
+        title: form.title,
+        description: form.description,
+        type: form.type,
+        category: form.category,
+        created_by: "Maria",
+        status: "pending",
+        variant_a_html: form.variant_a_html,
+        variant_b_html: form.type === "ab" ? form.variant_b_html : "",
+        custom_questions: customQuestions,
+      });
+
+      setShowConfirmCreate(false);
 
       setForm({
         title: "",
@@ -1097,6 +1134,35 @@ function DeveloperView({ experiments, onCreate }) {
 
           {selectedExperiment && renderExperimentDetail()}
         </>
+      )}
+      {showConfirmCreate && (
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <h3>Enviar experimento a validación</h3>
+            <p>
+              El experimento se enviará al moderador para su revisión. No será visible
+              para los usuarios hasta que sea aprobado.
+            </p>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setShowConfirmCreate(false)}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmCreateExperiment}
+                disabled={loading}
+              >
+                {loading ? "Enviando..." : "Confirmar envío"}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </>
   );

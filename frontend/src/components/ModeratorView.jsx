@@ -5,6 +5,7 @@ function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdate
   const [openPreview, setOpenPreview] = useState({});
   const [selectedCategory, setSelectedCategory] = useState("");
   const [approvedQuestionsByExperiment, setApprovedQuestionsByExperiment] = useState({});
+  const [confirmAction, setConfirmAction] = useState(null);
 
   const pendingExperiments = experiments.filter(
     (experiment) => experiment.status === "pending"
@@ -61,6 +62,20 @@ function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdate
     }));
 
     onUpdateApprovedQuestions(experiment.id, nextApproved);
+  }
+
+  function requestStatusChange(experiment, status) {
+    setConfirmAction({
+      experiment,
+      status,
+    });
+  }
+
+  async function confirmStatusChange() {
+    if (!confirmAction) return;
+
+    await onUpdateStatus(confirmAction.experiment.id, confirmAction.status);
+    setConfirmAction(null);
   }
 
   return (
@@ -231,21 +246,17 @@ function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdate
                   <div className="actions">
                     <button
                       className="approve-btn"
-                      onClick={() =>
-                        onUpdateStatus(experiment.id, "approved")
-                      }
+                      onClick={() => requestStatusChange(experiment, "approved")}
                     >
                       Aprobar
                     </button>
 
-                    <button
-                      className="reject-btn"
-                      onClick={() =>
-                        onUpdateStatus(experiment.id, "rejected")
-                      }
-                    >
-                      Rechazar
-                    </button>
+                   <button
+                    className="reject-btn"
+                    onClick={() => requestStatusChange(experiment, "rejected")}
+                  >
+                    Rechazar
+                  </button>
                   </div>
                 </div>
               );
@@ -253,6 +264,47 @@ function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdate
           </div>
         )}
       </section>
+      {confirmAction && (
+        <div className="modal-backdrop">
+          <div className="modal-card">
+            <h3>
+              {confirmAction.status === "approved"
+                ? "Confirmar aprobación"
+                : "Confirmar rechazo"}
+            </h3>
+
+            <p>
+              {confirmAction.status === "approved"
+                ? `El experimento "${confirmAction.experiment.title}" será publicado y visible para los usuarios.`
+                : `El experimento "${confirmAction.experiment.title}" será rechazado y no estará disponible para evaluación.`}
+            </p>
+
+            <div className="modal-actions">
+              <button
+                type="button"
+                className="secondary-button"
+                onClick={() => setConfirmAction(null)}
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                className={
+                  confirmAction.status === "approved"
+                    ? "approve-btn"
+                    : "reject-btn"
+                }
+                onClick={confirmStatusChange}
+              >
+                {confirmAction.status === "approved"
+                  ? "Aprobar experimento"
+                  : "Rechazar experimento"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }
