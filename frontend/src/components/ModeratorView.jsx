@@ -136,7 +136,22 @@ function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdate
                   }`}
                 >
                   <h3>{experiment.title}</h3>
-                  <p>{experiment.description || "Sin descripción"}</p>
+
+                  <p className="experiment-short-description">
+                    {experiment.short_description || "Sin descripción breve"}
+                  </p>
+
+                  <p className="experiment-long-description">
+                    {experiment.description || "Sin descripción detallada"}
+                  </p>
+
+                  {experiment.instructions && (
+                    <div className="experiment-instructions">
+                      <h4>Instrucciones</h4>
+                      <p>{experiment.instructions}</p>
+                    </div>
+                  )}
+
                   <p>
                     <strong>Tipo:</strong> {experiment.type}
                   </p>

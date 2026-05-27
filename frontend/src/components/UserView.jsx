@@ -180,7 +180,17 @@ function UserView({ experiments, onEvaluate }) {
           <div className="developer-subheader-row">
             <div>
               <h2>{selectedExperiment.title}</h2>
-              <p>{selectedExperiment.description || "Sin descripción"}</p>
+              <p className="experiment-long-description">
+                {selectedExperiment.description || "Sin descripción detallada"}
+              </p>
+
+              {selectedExperiment.instructions && (
+                <div className="experiment-instructions">
+                  <h3>Instrucciones</h3>
+                  <p>{selectedExperiment.instructions}</p>
+                </div>
+              )}
+
               <p>
                 <strong>Tipo:</strong> {selectedExperiment.type} ·{" "}
                 <strong>Categoría:</strong>{" "}
