@@ -363,10 +363,50 @@ function DeveloperView({ experiments, onCreate }) {
     );
   }
 
+  function looksLikeHtml(value) {
+    if (!value || typeof value !== "string") return false;
+
+    return /<\/?[a-z][\s\S]*>/i.test(value.trim());
+  }
+
   async function handleSubmit(event) {
     event.preventDefault();
     setLoading(true);
     setValidationError("");
+
+    if (!form.title.trim()) {
+      setValidationError("El título del experimento es obligatorio.");
+      return;
+    }
+
+    if (!form.description.trim()) {
+      setValidationError("La descripción del experimento es obligatoria.");
+      return;
+    }
+
+    if (!form.variant_a_html.trim()) {
+      setValidationError("Debes introducir el HTML de la variante A.");
+      return;
+    }
+
+    if (!looksLikeHtml(form.variant_a_html)) {
+      setValidationError(
+        "La variante A debe contener HTML válido. Por ejemplo: <div>Contenido</div>."
+      );
+      return;
+    }
+
+    if (form.type === "ab" && !form.variant_b_html.trim()) {
+      setValidationError("Debes introducir el HTML de la variante B.");
+      return;
+    }
+
+    if (form.type === "ab" && !looksLikeHtml(form.variant_b_html)) {
+      setValidationError(
+        "La variante B debe contener HTML válido. Por ejemplo: <div>Contenido</div>."
+      );
+      return;
+    }
 
     try {
       const unsafeA = containsUnsafeHtml(form.variant_a_html);
