@@ -1,6 +1,7 @@
 import { useState } from "react";
 import ExperimentPreview from "./ExperimentPreview";
 import EvaluationForm from "./EvaluationForm";
+import ConfirmModal from "./ConfirmModal";
 
 const standardQuestions = [
   { id: "q1", text: "El propósito del componente se entiende rápidamente." },
@@ -224,34 +225,14 @@ function UserView({ experiments, onEvaluate }) {
           }
         />
 
-        
         {showConfirmSubmit && (
-          <div className="modal-backdrop">
-            <div className="modal-card">
-              <h3>Confirmar envío</h3>
-              <p>
-                Vas a enviar tu evaluación. Una vez enviada, el experimento quedará
-                marcado como evaluado en esta sesión.
-              </p>
-
-              <div className="modal-actions">
-                <button
-                  type="button"
-                  className="secondary-button"
-                  onClick={() => setShowConfirmSubmit(false)}
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="button"
-                  onClick={confirmSubmitEvaluation}
-                >
-                  Confirmar envío
-                </button>
-              </div>
-            </div>
-          </div>
+          <ConfirmModal
+            title="Confirmar envío"
+            message="Vas a enviar tu evaluación. Una vez enviada, el experimento quedará marcado como evaluado en esta sesión."
+            confirmLabel="Confirmar envío"
+            onCancel={() => setShowConfirmSubmit(false)}
+            onConfirm={confirmSubmitEvaluation}
+          />
         )}
       </>
     );
