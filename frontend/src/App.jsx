@@ -9,6 +9,8 @@ import {
   updateApprovedQuestions,
   registerUser,
   loginUser,
+  getPendingUsers,
+  updateUserStatus,
 } from "./api";
 import "./index.css";
 
@@ -24,6 +26,7 @@ function App() {
   const [publicPage, setPublicPage] = useState("home");
   const [experiments, setExperiments] = useState([]);
   const [publishedExperiments, setPublishedExperiments] = useState([]);
+  const [pendingUsers, setPendingUsers] = useState([]);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -50,6 +53,7 @@ function App() {
   useEffect(() => {
     loadExperiments();
     loadPublishedExperiments();
+    loadPendingUsers();
   }, []);
 
   useEffect(() => {
@@ -70,6 +74,16 @@ function App() {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  async function loadPendingUsers() {
+    try {
+      const data = await getPendingUsers();
+      setPendingUsers(data);
+    } catch (err) {
+      console.error(err);
+      setError("Error loading pending users");
+    }
+  }
 
   async function handleCreateExperiment(payload) {
     try {
@@ -176,6 +190,25 @@ function App() {
     } catch (err) {
       console.error("SIGNUP ERROR:", err);
       setError(err.message || "Error creando cuenta");
+    }
+  }
+
+  async function handleUpdateUserStatus(id, accountStatus) {
+    try {
+      setError("");
+
+      await updateUserStatus(id, accountStatus);
+
+      setSuccessMessage(
+        accountStatus === "approved"
+          ? "Developer aprobado correctamente"
+          : "Developer rechazado correctamente"
+      );
+
+      await loadPendingUsers();
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error actualizando usuario");
     }
   }
 
@@ -397,9 +430,11 @@ function App() {
       {role === "moderator" && (
         <ModeratorView
           experiments={experiments}
+          pendingUsers={pendingUsers}
           onUpdateStatus={handleUpdateStatus}
           onUpdateCategory={handleUpdateCategory}
           onUpdateApprovedQuestions={handleUpdateApprovedQuestions}
+          onUpdateUserStatus={handleUpdateUserStatus}
         />
       )}
 

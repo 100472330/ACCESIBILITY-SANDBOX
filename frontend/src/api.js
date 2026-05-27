@@ -141,3 +141,32 @@ export async function loginUser(payload) {
   return response.json();
 }
 
+export async function getPendingUsers() {
+  const response = await fetch(`${API_BASE_URL}/users/pending`);
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to fetch pending users");
+  }
+
+  return response.json();
+}
+
+export async function updateUserStatus(id, accountStatus) {
+  const response = await fetch(`${API_BASE_URL}/users/${id}/status`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      account_status: accountStatus,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to update user status");
+  }
+
+  return response.json();
+}

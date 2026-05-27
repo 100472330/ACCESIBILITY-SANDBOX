@@ -2,7 +2,14 @@ import { useState } from "react";
 import { buildPreviewHtml } from "../utils/previewHtml";
 import ConfirmModal from "./ConfirmModal";
 
-function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdateApprovedQuestions }) {
+function ModeratorView({
+    experiments,
+    pendingUsers = [],
+    onUpdateStatus,
+    onUpdateCategory,
+    onUpdateApprovedQuestions,
+    onUpdateUserStatus,
+  }) {
   const [openPreview, setOpenPreview] = useState({});
   const [selectedCategory, setSelectedCategory] = useState("");
   const [approvedQuestionsByExperiment, setApprovedQuestionsByExperiment] = useState({});
@@ -81,6 +88,58 @@ function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdate
 
   return (
     <>
+      <section className="card">
+        <h2>Developers pendientes</h2>
+        <p className="category-intro">
+          Revisa las cuentas de desarrollador que están pendientes de aprobación.
+        </p>
+
+        {pendingUsers.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">✓</div>
+            <h3>No hay developers pendientes</h3>
+            <p>Actualmente no hay nuevas cuentas de desarrollador esperando revisión.</p>
+          </div>
+        ) : (
+          <div className="experiment-list">
+            {pendingUsers.map((user) => (
+              <div key={user.id} className="experiment-item">
+                <div className="experiment-card-header">
+                  <div>
+                    <h3>{user.name}</h3>
+                    <p>{user.email}</p>
+                  </div>
+
+                  <span className="status-badge status-pending">
+                    {user.account_status}
+                  </span>
+                </div>
+
+                <p>
+                  <strong>Rol solicitado:</strong> {user.role}
+                </p>
+
+                <div className="actions">
+                  <button
+                    className="approve-btn"
+                    onClick={() => onUpdateUserStatus(user.id, "approved")}
+                  >
+                    Aprobar developer
+                  </button>
+
+                  <button
+                    className="reject-btn"
+                    onClick={() => onUpdateUserStatus(user.id, "rejected")}
+                  >
+                    Rechazar developer
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+      
       <section className="card">
         <h2>Moderación</h2>
         <p className="category-intro">

@@ -125,6 +125,56 @@ app.post("/auth/login", (req, res) => {
   );
 });
 
+app.get("/users/pending", (_req, res) => {
+  db.all(
+    `
+    SELECT id, name, email, role, account_status, created_at
+    FROM users
+    WHERE role = 'developer'
+      AND account_status = 'pending'
+    ORDER BY created_at DESC
+    `,
+    [],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json(rows);
+    }
+  );
+});
+
+app.patch("/users/:id/status", (req, res) => {
+  const { id } = req.params;
+  const { account_status } = req.body;
+
+  const allowedStatuses = ["pending", "approved", "rejected"];
+
+  if (!allowedStatuses.includes(account_status)) {
+    return res.status(400).json({ error: "Invalid account status" });
+  }
+
+  db.run(
+    `
+    UPDATE users
+    SET account_status = ?
+    WHERE id = ?
+      AND role = 'developer'
+    `,
+    [account_status, id],
+    function (err) {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json({
+        message: "User status updated successfully",
+        changes: this.changes,
+      });
+    }
+  );
+});
 
 app.post("/experiments", (req, res) => {
   const {
