@@ -64,7 +64,7 @@ function App() {
       await loadExperiments();
     } catch (err) {
       console.error(err);
-      setError("Error creando experimento");
+      setError(err.message || "Error creando experimento");
     }
   }
 

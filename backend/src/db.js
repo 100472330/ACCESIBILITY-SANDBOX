@@ -12,6 +12,8 @@ function initDb() {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         description TEXT,
+        short_description TEXT,
+        instructions TEXT,
         type TEXT NOT NULL,
         category TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'draft',

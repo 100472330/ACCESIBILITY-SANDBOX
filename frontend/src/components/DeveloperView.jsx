@@ -51,6 +51,8 @@ function DeveloperView({ experiments, onCreate }) {
   const [form, setForm] = useState({
     title: "",
     description: "",
+    short_description: "",
+    instructions: "",
     type: "single",
     category: "form",
     variant_a_html: "",
@@ -425,6 +427,8 @@ function DeveloperView({ experiments, onCreate }) {
       await onCreate({
         title: form.title,
         description: form.description,
+        short_description: form.short_description,
+        instructions: form.instructions,
         type: form.type,
         category: form.category,
         created_by: "Maria",
@@ -459,6 +463,8 @@ function DeveloperView({ experiments, onCreate }) {
       await onCreate({
         title: form.title,
         description: form.description,
+        short_description: form.short_description,
+        instructions: form.instructions,
         type: form.type,
         category: form.category,
         created_by: "Maria",
@@ -473,6 +479,8 @@ function DeveloperView({ experiments, onCreate }) {
       setForm({
         title: "",
         description: "",
+        short_description: "",
+        instructions: "",
         type: "single",
         category: "form",
         variant_a_html: "",
@@ -966,6 +974,39 @@ function DeveloperView({ experiments, onCreate }) {
                 value={form.description}
                 onChange={handleChange}
               />
+
+              <label htmlFor="short_description">
+                Descripción breve
+              </label>
+
+              <textarea
+                id="short_description"
+                name="short_description"
+                placeholder="Resumen breve para las tarjetas de experimentos"
+                value={form.short_description}
+                onChange={handleChange}
+                maxLength={120}
+              />
+
+              <p className="field-help">
+                Máximo recomendado: 120 caracteres.
+              </p>
+
+              <label htmlFor="instructions">
+                Instrucciones para el usuario
+              </label>
+
+              <textarea
+                id="instructions"
+                name="instructions"
+                placeholder="Indicaciones adicionales para realizar la evaluación"
+                value={form.instructions}
+                onChange={handleChange}
+              />
+
+              <p className="field-help">
+                Opcional. Utiliza este campo si el experimento requiere contexto o instrucciones.
+              </p>
 
               <label htmlFor="type">Tipo</label>
               <select id="type" name="type" value={form.type} onChange={handleChange}>

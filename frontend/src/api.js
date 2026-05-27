@@ -27,12 +27,12 @@ export async function createExperiment(payload) {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to create experiment");
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to create experiment");
   }
 
   return response.json();
 }
-
 export async function updateExperimentStatus(id, status) {
   const response = await fetch(`${API_BASE_URL}/experiments/${id}/status`, {
     method: "PATCH",
@@ -106,3 +106,4 @@ export async function updateApprovedQuestions(id, approvedQuestions) {
 
   return response.json();
 }
+

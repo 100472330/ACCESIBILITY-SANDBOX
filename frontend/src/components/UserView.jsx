@@ -309,7 +309,7 @@ function UserView({ experiments, onEvaluate }) {
                   <div className="experiment-card-header">
                     <div>
                       <h3>{experiment.title}</h3>
-                      <p>{experiment.description || "Sin descripción"}</p>
+                      <p>{experiment.short_description || "Sin descripción"}</p>
                     </div>
 
                     {alreadyEvaluated && (

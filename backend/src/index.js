@@ -14,10 +14,13 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true });
 });
 
+
 app.post("/experiments", (req, res) => {
   const {
     title,
     description,
+    short_description,
+    instructions,
     type,
     category,
     created_by,
@@ -27,14 +30,25 @@ app.post("/experiments", (req, res) => {
     status,
   } = req.body;
 
-  if (!title || !type || !category || !created_by) {
+  console.log("BODY /experiments:", req.body);
+  console.log("FIELDS:", {
+    title,
+    description,
+    short_description,
+    instructions,
+    type,
+    category,
+    created_by,
+  });
+
+  if (!title || !type || !short_description || !category || !created_by) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
   const query = `
     INSERT INTO experiments
-    (title, description, type, category, status, created_by, variant_a_html, variant_b_html, custom_questions)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (title, description, short_description, instructions, type, category, status, created_by, variant_a_html, variant_b_html, custom_questions)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.run(
@@ -42,6 +56,8 @@ app.post("/experiments", (req, res) => {
     [
       title,
       description || "",
+      short_description,
+      instructions || "",
       type,
       category,
       status || "draft",
@@ -129,7 +145,7 @@ app.post("/evaluations", (req, res) => {
     custom_answers,
   } = req.body;
 
-  if (!experiment_id || !clarity || !comprehension || !cognitive_load) {
+  if (!title || !type || !short_description || !category || !created_by) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
