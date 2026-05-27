@@ -13,6 +13,7 @@ import "./index.css";
 import DeveloperView from "./components/DeveloperView";
 import ModeratorView from "./components/ModeratorView";
 import UserView from "./components/UserView";
+import AuthView from "./components/auth/AuthView";
 
 function App() {
   const [role, setRole] = useState("");
@@ -136,35 +137,86 @@ function App() {
     }
   }
 
-  function renderAuthFlow() {
-  if (authFlow === "developer") {
-    return (
-      <section className="card login-card">
-        <h1>Acceso Developer</h1>
-        <p className="login-subtitle">
-          Inicia sesión o crea una cuenta para proponer experimentos.
-        </p>
+  async function handleLogin(payload) {
+    try {
+      setError("");
 
-        <div className="auth-actions">
-          <button onClick={() => setRole("developer")}>
-            Entrar como Developer
-          </button>
+      const data = await loginUser(payload);
 
-          <button className="secondary-button">
-            Crear cuenta Developer
-          </button>
-        </div>
-
-        <button
-          type="button"
-          className="public-back-button"
-          onClick={() => setAuthFlow("")}
-        >
-          Volver
-        </button>
-      </section>
-    );
+      setCurrentUser(data.user);
+      setRole(data.user.role);
+      setAuthFlow("");
+      setSuccessMessage("Sesión iniciada correctamente");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error iniciando sesión");
+    }
   }
+
+  async function handleSignup(payload) {
+    try {
+      setError("");
+
+      const data = await registerUser(payload);
+
+      if (data.role === "developer") {
+        setSuccessMessage(
+          "Cuenta creada correctamente. Queda pendiente de aprobación por un moderador."
+        );
+        setAuthFlow("");
+        return;
+      }
+
+      setCurrentUser(data);
+      setRole(data.role);
+      setAuthFlow("");
+      setSuccessMessage("Cuenta creada correctamente");
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error creando cuenta");
+    }
+  }
+
+  function renderAuthFlow() {
+    if (authFlow === "developer") {
+      return (
+        <AuthView
+          role="developer"
+          allowSignup
+          onBack={() => setAuthFlow("")}
+          onLogin={handleLogin}
+          onSignup={handleSignup}
+        />
+      );
+    }
+
+    if (authFlow === "moderator") {
+      return (
+        <AuthView
+          role="moderator"
+          allowSignup={false}
+          onBack={() => setAuthFlow("")}
+          onLogin={handleLogin}
+          onSignup={handleSignup}
+        />
+      );
+    }
+
+    if (authFlow === "user") {
+      return (
+        <AuthView
+          role="user"
+          allowSignup
+          onBack={() => setAuthFlow("")}
+          onLogin={handleLogin}
+          onSignup={handleSignup}
+        />
+      );
+    }
+
+    return null;
+  }
+  
 
   if (authFlow === "moderator") {
     return (
