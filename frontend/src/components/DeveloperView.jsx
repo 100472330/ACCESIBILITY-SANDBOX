@@ -46,7 +46,7 @@ function escapeCSV(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
-function DeveloperView({ experiments, onCreate }) {
+function DeveloperView({ experiments, currentUser, onCreate }) {
   const [results, setResults] = useState({});
   const [form, setForm] = useState({
     title: "",
@@ -437,7 +437,8 @@ function DeveloperView({ experiments, onCreate }) {
         instructions: form.instructions,
         type: form.type,
         category: form.category,
-        created_by: "Maria",
+        created_by: currentUser?.name || "Unknown developer",
+        created_by_id: currentUser?.id || null,
         status: "pending",
         variant_a_html: form.variant_a_html,
         variant_b_html: form.type === "ab" ? form.variant_b_html : "",

@@ -185,6 +185,7 @@ app.post("/experiments", (req, res) => {
     type,
     category,
     created_by,
+    created_by_id,
     variant_a_html,
     variant_b_html,
     custom_questions,
@@ -208,8 +209,8 @@ app.post("/experiments", (req, res) => {
 
   const query = `
     INSERT INTO experiments
-    (title, description, short_description, instructions, type, category, status, created_by, variant_a_html, variant_b_html, custom_questions)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    (title, description, short_description, instructions, type, category, status, created_by, created_by_id, variant_a_html, variant_b_html, custom_questions)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
 
   db.run(
@@ -223,6 +224,7 @@ app.post("/experiments", (req, res) => {
       category,
       status || "draft",
       created_by,
+      created_by_id || null,
       variant_a_html || "",
       variant_b_html || "",
       JSON.stringify(custom_questions || []),

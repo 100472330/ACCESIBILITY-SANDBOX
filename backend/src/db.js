@@ -18,6 +18,7 @@ function initDb() {
         category TEXT NOT NULL,
         status TEXT NOT NULL DEFAULT 'draft',
         created_by TEXT NOT NULL,
+        created_by_id INTEGER,
         variant_a_html TEXT,
         variant_b_html TEXT,
         custom_questions TEXT,

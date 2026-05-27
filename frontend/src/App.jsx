@@ -458,6 +458,7 @@ function App() {
       {role === "developer" && (
         <DeveloperView
           experiments={experiments}
+          currentUser={currentUser}
           onCreate={handleCreateExperiment}
         />
       )}
