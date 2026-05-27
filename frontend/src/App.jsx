@@ -16,6 +16,7 @@ import UserView from "./components/UserView";
 
 function App() {
   const [role, setRole] = useState("");
+  const [authFlow, setAuthFlow] = useState("");
   const [publicPage, setPublicPage] = useState("home");
   const [experiments, setExperiments] = useState([]);
   const [publishedExperiments, setPublishedExperiments] = useState([]);
@@ -134,6 +135,93 @@ function App() {
     }
   }
 
+  function renderAuthFlow() {
+  if (authFlow === "developer") {
+    return (
+      <section className="card login-card">
+        <h1>Acceso Developer</h1>
+        <p className="login-subtitle">
+          Inicia sesión o crea una cuenta para proponer experimentos.
+        </p>
+
+        <div className="auth-actions">
+          <button onClick={() => setRole("developer")}>
+            Entrar como Developer
+          </button>
+
+          <button className="secondary-button">
+            Crear cuenta Developer
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="public-back-button"
+          onClick={() => setAuthFlow("")}
+        >
+          Volver
+        </button>
+      </section>
+    );
+  }
+
+  if (authFlow === "moderator") {
+    return (
+      <section className="card login-card">
+        <h1>Acceso Moderator</h1>
+        <p className="login-subtitle">
+          Acceso reservado a moderadores autorizados.
+        </p>
+
+        <div className="auth-actions">
+          <button onClick={() => setRole("moderator")}>
+            Entrar como Moderator
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="public-back-button"
+          onClick={() => setAuthFlow("")}
+        >
+          Volver
+        </button>
+      </section>
+    );
+  }
+
+  if (authFlow === "user") {
+      return (
+        <section className="card login-card">
+          <h1>Acceso User</h1>
+          <p className="login-subtitle">
+            Inicia sesión o crea una cuenta para evaluar experimentos publicados.
+          </p>
+
+          <div className="auth-actions">
+            <button onClick={() => setRole("user")}>
+              Entrar como User
+            </button>
+
+            <button className="secondary-button">
+              Crear cuenta User
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className="public-back-button"
+            onClick={() => setAuthFlow("")}
+          >
+            Volver
+          </button>
+        </section>
+      );
+    }
+
+    return null;
+  }
+
   // 🔹 páginas públicas
   function renderPublicPage() {
     if (publicPage === "help") {
@@ -192,7 +280,7 @@ function App() {
           <button
             type="button"
             className="role-card"
-            onClick={() => setRole("developer")}
+            onClick={() => setAuthFlow("developer")}
           >
             <h2>Developer</h2>
             <p>Crea experimentos y analiza resultados.</p>
@@ -201,7 +289,7 @@ function App() {
           <button
             type="button"
             className="role-card"
-            onClick={() => setRole("moderator")}
+            onClick={() => setAuthFlow("moderator")}
           >
             <h2>Moderator</h2>
             <p>Revisa experimentos y decide si se publican.</p>
@@ -227,7 +315,10 @@ function App() {
         <header className="public-header">
           <div
             className="public-header-brand"
-            onClick={() => setPublicPage("home")}
+            onClick={() => {
+              setPublicPage("home");
+              setAuthFlow("");
+            }}
           >
             Accessibility Sandbox
           </div>
@@ -237,7 +328,9 @@ function App() {
           </nav>
         </header>
 
-        <main className="public-main">{renderPublicPage()}</main>
+        <main className="public-main">
+          {authFlow ? renderAuthFlow() : renderPublicPage()}
+        </main>
 
         <footer className="public-footer">
           <button onClick={() => setPublicPage("help")}>Ayuda</button>

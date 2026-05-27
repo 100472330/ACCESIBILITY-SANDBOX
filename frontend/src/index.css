@@ -1475,3 +1475,15 @@ button:disabled {
   line-height: 1.6;
 }
 
+.auth-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin: 2rem 0 1rem;
+  flex-wrap: wrap;
+}
+
+.public-back-button {
+  margin-top: 1rem;
+}
+
