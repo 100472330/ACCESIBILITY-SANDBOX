@@ -1054,9 +1054,31 @@ function DeveloperView({ experiments, onCreate }) {
                   <button
                     type="button"
                     onClick={() => {
-                      if (!newQuestion.trim() || customQuestions.length >= 3) return;
-                      setCustomQuestions((prev) => [...prev, newQuestion.trim()]);
+                      const question = newQuestion.trim();
+                      
+                      if (!question) {
+                        setValidationError("La pregunta personalizada no puede estar vacía.");
+                        return;
+                      }
+
+                      if (question.length < 10) {
+                        setValidationError("La pregunta personalizada debe ser más descriptiva.");
+                        return;
+                      }
+
+                      if (customQuestions.includes(question)) {
+                        setValidationError("Esta pregunta personalizada ya ha sido añadida.");
+                        return;
+                      }
+
+                      if (customQuestions.length >= 3) {
+                        setValidationError("Solo puedes añadir un máximo de 3 preguntas personalizadas.");
+                        return;
+                      }
+
+                      setCustomQuestions((prev) => [...prev, question]);
                       setNewQuestion("");
+                      setValidationError("");
                     }}
                     disabled={customQuestions.length >= 3}
                   >
