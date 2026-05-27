@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getExperimentResults } from "../api";
 import { buildPreviewHtml } from "../utils/previewHtml";
+import ConfirmModal from "./ConfirmModal";
 
 const standardQuestions = [
   { id: "q1", text: "El propósito del componente se entiende rápidamente." },
@@ -64,6 +65,7 @@ function DeveloperView({ experiments, onCreate }) {
   const [activeTab, setActiveTab] = useState("");
   const [selectedExperiment, setSelectedExperiment] = useState(null);
   const [showConfirmCreate, setShowConfirmCreate] = useState(false);
+  
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -476,6 +478,7 @@ function DeveloperView({ experiments, onCreate }) {
         variant_a_html: "",
         variant_b_html: "",
       });
+
       setCustomQuestions([]);
       setNewQuestion("");
     } finally {
@@ -1055,7 +1058,7 @@ function DeveloperView({ experiments, onCreate }) {
                     type="button"
                     onClick={() => {
                       const question = newQuestion.trim();
-                      
+
                       if (!question) {
                         setValidationError("La pregunta personalizada no puede estar vacía.");
                         return;
@@ -1198,33 +1201,13 @@ function DeveloperView({ experiments, onCreate }) {
         </>
       )}
       {showConfirmCreate && (
-        <div className="modal-backdrop">
-          <div className="modal-card">
-            <h3>Enviar experimento a validación</h3>
-            <p>
-              El experimento se enviará al moderador para su revisión. No será visible
-              para los usuarios hasta que sea aprobado.
-            </p>
-
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => setShowConfirmCreate(false)}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                onClick={confirmCreateExperiment}
-                disabled={loading}
-              >
-                {loading ? "Enviando..." : "Confirmar envío"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title="Enviar experimento a validación"
+          message="El experimento se enviará al moderador para su revisión. No será visible para los usuarios hasta que sea aprobado."
+          confirmLabel={loading ? "Enviando..." : "Confirmar envío"}
+          onCancel={() => setShowConfirmCreate(false)}
+          onConfirm={confirmCreateExperiment}
+        />
       )}
     </>
   );
