@@ -1,5 +1,6 @@
 import { useState } from "react";
 import ExperimentPreview from "./ExperimentPreview";
+import EvaluationForm from "./EvaluationForm";
 
 const standardQuestions = [
   { id: "q1", text: "El propósito del componente se entiende rápidamente." },
@@ -207,111 +208,23 @@ function UserView({ experiments, onEvaluate }) {
           />
         </section>
 
-        <section className="card">
-          <h3>Evaluar experimento</h3>
+        <EvaluationForm
+          experiment={selectedExperiment}
+          form={form}
+          customQuestions={customQuestions}
+          customAnswers={customAnswers}
+          onSubmit={handleSubmit}
+          onChange={handleChange}
+          onStandardAnswerChange={handleStandardAnswerChange}
+          onCustomAnswersChange={(question, value) =>
+            setCustomAnswers((prev) => ({
+              ...prev,
+              [question]: value,
+            }))
+          }
+        />
 
-          <form onSubmit={handleSubmit} className="form">
-            <div className="standard-questions-block">
-              <h3>Evaluación estándar</h3>
-              <p className="evaluation-help">
-                Valora cada afirmación del 1 al 5, donde 1 significa “muy en desacuerdo”
-                y 5 significa “muy de acuerdo”.
-              </p>
-
-              {selectedExperiment.type === "ab" && (
-                <div className="standard-question-card">
-                  <p className="standard-question-text">
-                    ¿Qué variante prefieres?
-                  </p>
-
-                  <div className="ab-choice-inline">
-                    <label className="likert-option">
-                      <input
-                        type="radio"
-                        name="preferred_variant"
-                        value="A"
-                        checked={form.preferred_variant === "A"}
-                        onChange={handleChange}
-                      />
-                      <span>Variante A</span>
-                    </label>
-
-                    <label className="likert-option">
-                      <input
-                        type="radio"
-                        name="preferred_variant"
-                        value="B"
-                        checked={form.preferred_variant === "B"}
-                        onChange={handleChange}
-                      />
-                      <span>Variante B</span>
-                    </label>
-                  </div>
-                </div>
-              )}
-
-              {standardQuestions.map((question) => (
-                <div key={question.id} className="standard-question-card">
-                  <p className="standard-question-text">{question.text}</p>
-
-                  <div className="likert-row">
-                    <span className="likert-end-label">Muy en desacuerdo</span>
-
-                    <div className="likert-scale">
-                      {[1, 2, 3, 4, 5].map((value) => (
-                        <label key={value} className="likert-option">
-                          <input
-                            type="radio"
-                            name={question.id}
-                            value={value}
-                            checked={form.standard_answers[question.id] === value}
-                            onChange={() =>
-                              handleStandardAnswerChange(question.id, value)
-                            }
-                          />
-                          <span>{value}</span>
-                        </label>
-                      ))}
-                    </div>
-
-                    <span className="likert-end-label">Muy de acuerdo</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-
-            <textarea
-              name="comment"
-              placeholder="Comentario opcional"
-              value={form.comment}
-              onChange={handleChange}
-            />
-
-            {customQuestions.length > 0 && (
-              <div className="custom-answers-block">
-                <h3>Preguntas específicas del experimento</h3>
-
-                {customQuestions.map((question, index) => (
-                  <label key={index}>
-                    {question}
-                    <textarea
-                      placeholder="Escribe tu respuesta..."
-                      value={customAnswers[question] || ""}
-                      onChange={(e) =>
-                        setCustomAnswers((prev) => ({
-                          ...prev,
-                          [question]: e.target.value,
-                        }))
-                      }
-                    />
-                  </label>
-                ))}
-              </div>
-            )}
-
-            <button type="submit">Enviar evaluación</button>
-          </form>
-        </section>
+        
         {showConfirmSubmit && (
           <div className="modal-backdrop">
             <div className="modal-card">
