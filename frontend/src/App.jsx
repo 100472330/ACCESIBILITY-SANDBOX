@@ -7,6 +7,8 @@ import {
   createEvaluation,
   updateExperimentCategory,
   updateApprovedQuestions,
+  registerUser,
+  loginUser,
 } from "./api";
 import "./index.css";
 
@@ -159,7 +161,7 @@ function App() {
 
       const data = await registerUser(payload);
 
-      if (data.role === "developer") {
+      if (data.role === "developer" && data.account_status === "pending") {
         setSuccessMessage(
           "Cuenta creada correctamente. Queda pendiente de aprobación por un moderador."
         );
@@ -172,7 +174,7 @@ function App() {
       setAuthFlow("");
       setSuccessMessage("Cuenta creada correctamente");
     } catch (err) {
-      console.error(err);
+      console.error("SIGNUP ERROR:", err);
       setError(err.message || "Error creando cuenta");
     }
   }
@@ -217,65 +219,7 @@ function App() {
     return null;
   }
   
-
-  if (authFlow === "moderator") {
-    return (
-      <section className="card login-card">
-        <h1>Acceso Moderator</h1>
-        <p className="login-subtitle">
-          Acceso reservado a moderadores autorizados.
-        </p>
-
-        <div className="auth-actions">
-          <button onClick={() => setRole("moderator")}>
-            Entrar como Moderator
-          </button>
-        </div>
-
-        <button
-          type="button"
-          className="public-back-button"
-          onClick={() => setAuthFlow("")}
-        >
-          Volver
-        </button>
-      </section>
-    );
-  }
-
-  if (authFlow === "user") {
-      return (
-        <section className="card login-card">
-          <h1>Acceso User</h1>
-          <p className="login-subtitle">
-            Inicia sesión o crea una cuenta para evaluar experimentos publicados.
-          </p>
-
-          <div className="auth-actions">
-            <button onClick={() => setRole("user")}>
-              Entrar como User
-            </button>
-
-            <button className="secondary-button">
-              Crear cuenta User
-            </button>
-          </div>
-
-          <button
-            type="button"
-            className="public-back-button"
-            onClick={() => setAuthFlow("")}
-          >
-            Volver
-          </button>
-        </section>
-      );
-    }
-
-    return null;
-  }
-
-  // 🔹 páginas públicas
+  // public pages
   function renderPublicPage() {
     if (publicPage === "help") {
       return (
@@ -382,7 +326,12 @@ function App() {
         </header>
 
         <main className="public-main">
-          {authFlow ? renderAuthFlow() : renderPublicPage()}
+          <div className="public-content">
+            {successMessage && <p className="success">{successMessage}</p>}
+            {error && <p className="error">{error}</p>}
+
+            {authFlow ? renderAuthFlow() : renderPublicPage()}
+          </div>
         </main>
 
         <footer className="public-footer">
@@ -462,6 +411,7 @@ function App() {
       )}
     </div>
   );
+
 }
 
 

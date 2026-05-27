@@ -1487,3 +1487,10 @@ button:disabled {
   margin-top: 1rem;
 }
 
+.public-content {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+

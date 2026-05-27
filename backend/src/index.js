@@ -19,6 +19,7 @@ app.get("/health", (_req, res) => {
 
 app.post("/auth/register", async (req, res) => {
   const { name, email, password, role } = req.body;
+  const accountStatus = role === "developer" ? "pending" : "approved";
 
   if (!name || !email || !password || !role) {
     return res.status(400).json({ error: "Missing required fields" });
@@ -35,10 +36,10 @@ app.post("/auth/register", async (req, res) => {
 
     db.run(
       `
-      INSERT INTO users (name, email, password_hash, role)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO users (name, email, password_hash, role, account_status)
+      VALUES (?, ?, ?, ?, ?)
       `,
-      [name, email, passwordHash, role],
+      [name, email, passwordHash, role, accountStatus],
       function (err) {
         if (err) {
           if (err.message.includes("UNIQUE")) {
@@ -53,6 +54,7 @@ app.post("/auth/register", async (req, res) => {
           name,
           email,
           role,
+          account_status: accountStatus,
         });
       }
     );
@@ -89,11 +91,21 @@ app.post("/auth/login", (req, res) => {
         return res.status(401).json({ error: "Invalid credentials" });
       }
 
+      if (user.account_status !== "approved") {
+        return res.status(403).json({
+          error:
+            user.account_status === "pending"
+              ? "Account pending approval"
+              : "Account rejected",
+        });
+      }
+
       const token = jwt.sign(
         {
           id: user.id,
           email: user.email,
           role: user.role,
+          account_status: user.account_status,
         },
         JWT_SECRET,
         { expiresIn: "2h" }
@@ -106,6 +118,7 @@ app.post("/auth/login", (req, res) => {
           name: user.name,
           email: user.email,
           role: user.role,
+          account_status: user.account_status,
         },
       });
     }

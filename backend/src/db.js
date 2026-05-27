@@ -49,6 +49,8 @@ function initDb() {
         email TEXT NOT NULL UNIQUE,
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL CHECK(role IN ('developer', 'moderator', 'user')),
+        account_status TEXT NOT NULL DEFAULT 'approved'
+          CHECK(account_status IN ('pending', 'approved', 'rejected')),
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
