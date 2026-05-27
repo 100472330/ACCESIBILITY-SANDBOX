@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { buildPreviewHtml } from "../utils/previewHtml";
+import ConfirmModal from "./ConfirmModal";
 
 function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdateApprovedQuestions }) {
   const [openPreview, setOpenPreview] = useState({});
@@ -265,45 +266,30 @@ function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdate
         )}
       </section>
       {confirmAction && (
-        <div className="modal-backdrop">
-          <div className="modal-card">
-            <h3>
-              {confirmAction.status === "approved"
-                ? "Confirmar aprobación"
-                : "Confirmar rechazo"}
-            </h3>
-
-            <p>
-              {confirmAction.status === "approved"
-                ? `El experimento "${confirmAction.experiment.title}" será publicado y visible para los usuarios.`
-                : `El experimento "${confirmAction.experiment.title}" será rechazado y no estará disponible para evaluación.`}
-            </p>
-
-            <div className="modal-actions">
-              <button
-                type="button"
-                className="secondary-button"
-                onClick={() => setConfirmAction(null)}
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                className={
-                  confirmAction.status === "approved"
-                    ? "approve-btn"
-                    : "reject-btn"
-                }
-                onClick={confirmStatusChange}
-              >
-                {confirmAction.status === "approved"
-                  ? "Aprobar experimento"
-                  : "Rechazar experimento"}
-              </button>
-            </div>
-          </div>
-        </div>
+        <ConfirmModal
+          title={
+            confirmAction.status === "approved"
+              ? "Confirmar aprobación"
+              : "Confirmar rechazo"
+          }
+          message={
+            confirmAction.status === "approved"
+              ? `El experimento "${confirmAction.experiment.title}" será publicado y visible para los usuarios.`
+              : `El experimento "${confirmAction.experiment.title}" será rechazado y no estará disponible para evaluación.`
+          }
+          confirmLabel={
+            confirmAction.status === "approved"
+              ? "Aprobar experimento"
+              : "Rechazar experimento"
+          }
+          confirmClassName={
+            confirmAction.status === "approved"
+              ? "approve-btn"
+              : "reject-btn"
+          }
+          onCancel={() => setConfirmAction(null)}
+          onConfirm={confirmStatusChange}
+        />
       )}
     </>
   );
