@@ -75,6 +75,17 @@ function App() {
     }
   }, [error]);
 
+  useEffect(() => {
+    const storedUser = localStorage.getItem("authUser");
+
+    if (storedUser) {
+      const parsedUser = JSON.parse(storedUser);
+
+      setCurrentUser(parsedUser);
+      setRole(parsedUser.role);
+    }
+  }, []);
+
   async function loadPendingUsers() {
     try {
       const data = await getPendingUsers();
@@ -159,6 +170,12 @@ function App() {
 
       const data = await loginUser(payload);
 
+      localStorage.setItem("authToken", data.token);
+      localStorage.setItem(
+        "authUser",
+        JSON.stringify(data.user)
+      );
+
       setCurrentUser(data.user);
       setRole(data.user.role);
       setAuthFlow("");
@@ -182,6 +199,11 @@ function App() {
         setAuthFlow("");
         return;
       }
+
+      localStorage.setItem(
+        "authUser",
+        JSON.stringify(data)
+      );
 
       setCurrentUser(data);
       setRole(data.role);
@@ -390,9 +412,22 @@ function App() {
         <h1>Accessibility Sandbox</h1>
         <div className="role-switcher">
           <span>
-            Rol actual: <strong>{role}</strong>
+            {currentUser?.name || "Usuario"} ·{" "}
+            <strong>{currentUser?.role || role}</strong>
           </span>
-          <button onClick={() => setRole("")}>Cambiar rol</button>
+          <button
+            onClick={() => {
+              localStorage.removeItem("authToken");
+              localStorage.removeItem("authUser");
+
+              setCurrentUser(null);
+              setRole("");
+              setAuthFlow("");
+              setSuccessMessage("Sesión cerrada correctamente");
+            }}
+          >
+            Cerrar sesión
+          </button>
         </div>
       </header>
 
