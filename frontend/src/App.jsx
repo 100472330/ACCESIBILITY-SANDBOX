@@ -56,17 +56,33 @@ function App() {
     }
   }, [successMessage]);
 
+  useEffect(() => {
+    if (error) {
+      const timer = setTimeout(() => {
+        setError("");
+      }, 4000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [error]);
+
   async function handleCreateExperiment(payload) {
     try {
       setError("");
+
       await createExperiment(payload);
+
       setSuccessMessage("Experimento creado correctamente");
+      setError("");
+
       await loadExperiments();
+      await loadPublishedExperiments();
     } catch (err) {
       console.error(err);
       setError(err.message || "Error creando experimento");
     }
   }
+}
 
   async function handleUpdateStatus(id, status) {
     try {
@@ -301,5 +317,6 @@ function App() {
     </div>
   );
 }
+
 
 export default App;

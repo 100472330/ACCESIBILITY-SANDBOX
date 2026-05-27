@@ -375,7 +375,6 @@ function DeveloperView({ experiments, onCreate }) {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setLoading(true);
     setValidationError("");
 
     if (!form.title.trim()) {
@@ -412,47 +411,18 @@ function DeveloperView({ experiments, onCreate }) {
       return;
     }
 
-    try {
-      const unsafeA = containsUnsafeHtml(form.variant_a_html);
-      const unsafeB =
-        form.type === "ab" ? containsUnsafeHtml(form.variant_b_html) : false;
+    const unsafeA = containsUnsafeHtml(form.variant_a_html);
+    const unsafeB =
+      form.type === "ab" ? containsUnsafeHtml(form.variant_b_html) : false;
 
-      if (unsafeA || unsafeB) {
-        setValidationError(
-          "El HTML contiene etiquetas o atributos no permitidos (por ejemplo <script> u onClick)."
-        );
-        return;
-      }
-
-      await onCreate({
-        title: form.title,
-        description: form.description,
-        short_description: form.short_description,
-        instructions: form.instructions,
-        type: form.type,
-        category: form.category,
-        created_by: "Maria",
-        status: "pending",
-        variant_a_html: form.variant_a_html,
-        variant_b_html: form.type === "ab" ? form.variant_b_html : "",
-        custom_questions: customQuestions,
-      });
-
-      setForm({
-        title: "",
-        description: "",
-        type: "single",
-        category: "form",
-        variant_a_html: "",
-        variant_b_html: "",
-      });
-      setCustomQuestions([]);
-      setNewQuestion("");
-    } finally {
-      setLoading(false);
+    if (unsafeA || unsafeB) {
+      setValidationError(
+        "El HTML contiene etiquetas o atributos no permitidos (por ejemplo <script> u onClick)."
+      );
+      return;
     }
 
-   setShowConfirmCreate(true);
+    setShowConfirmCreate(true);
 
   }
 

@@ -42,8 +42,8 @@ app.post("/experiments", (req, res) => {
   });
 
   if (!title || !type || !short_description || !category || !created_by) {
-    return res.status(400).json({ error: "Missing required fields" });
-  }
+  return res.status(400).json({ error: "Missing required fields" });
+}
 
   const query = `
     INSERT INTO experiments
