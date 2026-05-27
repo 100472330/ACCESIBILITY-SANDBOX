@@ -47,6 +47,8 @@ function UserView({ experiments, onEvaluate }) {
   const [selectedExperimentId, setSelectedExperimentId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [customAnswers, setCustomAnswers] = useState({});
+  const [submittedExperimentIds, setSubmittedExperimentIds] = useState([]);
+  const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [form, setForm] = useState(initialForm);
 
   const selectedExperiment = experiments.find(
@@ -119,6 +121,26 @@ function UserView({ experiments, onEvaluate }) {
 
     if (!selectedExperiment) return;
 
+    if (selectedExperiment.type === "ab" && !form.preferred_variant) {
+      alert("Debes seleccionar qué variante prefieres antes de enviar la evaluación.");
+      return;
+    }
+
+    setShowConfirmSubmit(true);
+
+    const answers = form.standard_answers;
+
+    const average = (ids) =>
+      ids.reduce((sum, id) => sum + Number(answers[id] || 0), 0) / ids.length;
+
+    const derivedClarity = average(["q1", "q2", "q3", "q8"]);
+    const derivedComprehension = average(["q4", "q5", "q7"]);
+    const derivedCognitiveLoad = 6 - average(["q6", "q9", "q10"]);
+  }
+
+  async function confirmSubmitEvaluation() {
+    if (!selectedExperiment) return;
+
     const answers = form.standard_answers;
 
     const average = (ids) =>
@@ -139,6 +161,12 @@ function UserView({ experiments, onEvaluate }) {
       custom_answers: customAnswers,
     });
 
+    setSubmittedExperimentIds((prev) => [
+      ...prev,
+      selectedExperiment.id,
+    ]);
+
+    setShowConfirmSubmit(false);
     resetEvaluationForm();
     setSelectedExperimentId(null);
   }
@@ -318,6 +346,34 @@ function UserView({ experiments, onEvaluate }) {
             <button type="submit">Enviar evaluación</button>
           </form>
         </section>
+        {showConfirmSubmit && (
+          <div className="modal-backdrop">
+            <div className="modal-card">
+              <h3>Confirmar envío</h3>
+              <p>
+                Vas a enviar tu evaluación. Una vez enviada, el experimento quedará
+                marcado como evaluado en esta sesión.
+              </p>
+
+              <div className="modal-actions">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  onClick={() => setShowConfirmSubmit(false)}
+                >
+                  Cancelar
+                </button>
+
+                <button
+                  type="button"
+                  onClick={confirmSubmitEvaluation}
+                >
+                  Confirmar envío
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </>
     );
   }
@@ -356,38 +412,67 @@ function UserView({ experiments, onEvaluate }) {
           <p>No hay experimentos publicados en esta categoría.</p>
         ) : (
           <div className="experiment-list">
-            {filteredExperiments.map((experiment) => (
-              <div
-                key={experiment.id}
-                className="experiment-item selectable"
-                onClick={() => openExperiment(experiment.id)}
-                role="button"
-                tabIndex={0}
-                onKeyDown={(event) => handleExperimentKeyDown(event, experiment.id)}
-              >
-                <div className="experiment-card-header">
-                  <div>
-                    <h3>{experiment.title}</h3>
-                    <p>{experiment.description || "Sin descripción"}</p>
-                  </div>
-                </div>
+            {filteredExperiments.map((experiment) => {
+              const alreadyEvaluated = submittedExperimentIds.includes(
+                experiment.id
+              );
 
-                <div className="experiment-card-meta">
-                  <p><strong>Tipo:</strong> {experiment.type}</p>
-                  <p><strong>Categoría:</strong> {experiment.category || "Sin categoría"}</p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={(event) => {
-                    event.stopPropagation();
+              return (
+                <div
+                  key={experiment.id}
+                  className={`experiment-item selectable ${
+                    alreadyEvaluated ? "already-evaluated" : ""
+                  }`}
+                  onClick={() => {
+                    if (alreadyEvaluated) return;
                     openExperiment(experiment.id);
                   }}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(event) => {
+                    if (alreadyEvaluated) return;
+                    handleExperimentKeyDown(event, experiment.id);
+                  }}
                 >
-                  Evaluar experimento
-                </button>
-              </div>
-            ))}
+                  <div className="experiment-card-header">
+                    <div>
+                      <h3>{experiment.title}</h3>
+                      <p>{experiment.description || "Sin descripción"}</p>
+                    </div>
+
+                    {alreadyEvaluated && (
+                      <span className="status-badge status-approved">
+                        Evaluado
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="experiment-card-meta">
+                    <p><strong>Tipo:</strong> {experiment.type}</p>
+                    <p>
+                      <strong>Categoría:</strong>{" "}
+                      {experiment.category || "Sin categoría"}
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={alreadyEvaluated}
+                    onClick={(event) => {
+                      event.stopPropagation();
+
+                      if (alreadyEvaluated) return;
+
+                      openExperiment(experiment.id);
+                    }}
+                  >
+                    {alreadyEvaluated
+                      ? "Evaluación enviada"
+                      : "Evaluar experimento"}
+                  </button>
+                </div>
+              );
+            })}
           </div>
         )}
       </section>
