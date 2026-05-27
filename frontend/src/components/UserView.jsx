@@ -407,9 +407,21 @@ function UserView({ experiments, onEvaluate }) {
 
       <section className="card">
         {selectedCategory === "" ? (
-          <p>Selecciona una categoría para empezar.</p>
+          <div className="empty-state">
+            <div className="empty-state-icon">⌕</div>
+            <h3>Selecciona una categoría</h3>
+            <p>
+              Elige una categoría para ver los experimentos disponibles y comenzar una evaluación.
+            </p>
+          </div>
         ) : filteredExperiments.length === 0 ? (
-          <p>No hay experimentos publicados en esta categoría.</p>
+          <div className="empty-state">
+            <div className="empty-state-icon">∅</div>
+            <h3>No hay experimentos publicados</h3>
+            <p>
+              Todavía no hay experimentos disponibles en esta categoría. Prueba con otra categoría o vuelve más tarde.
+            </p>
+          </div>
         ) : (
           <div className="experiment-list">
             {filteredExperiments.map((experiment) => {

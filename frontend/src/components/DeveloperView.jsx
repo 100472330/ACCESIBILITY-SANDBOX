@@ -595,7 +595,13 @@ function DeveloperView({ experiments, onCreate }) {
                 </div>
 
                 {experimentResults.total === 0 && (
-                  <p>No hay evaluaciones todavía.</p>
+                 <div className="empty-state">
+                  <div className="empty-state-icon">＋</div>
+                  <h3>No hay experimentos creados</h3>
+                  <p>
+                    Crea tu primer experimento para empezar a recoger evaluaciones de accesibilidad cognitiva.
+                  </p>
+                </div>
                 )}
 
                 {worstQuestion && worstValue !== null && (

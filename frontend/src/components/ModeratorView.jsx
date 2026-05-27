@@ -89,9 +89,21 @@ function ModeratorView({ experiments, onUpdateStatus, onUpdateCategory, onUpdate
 
       <section className="card">
         {selectedCategory === "" ? (
-          <p>Selecciona una categoría para empezar la moderación.</p>
+          <div className="empty-state">
+            <div className="empty-state-icon">🛡</div>
+            <h3>Selecciona una categoría</h3>
+            <p>
+              Elige una categoría para revisar los experimentos pendientes de moderación.
+            </p>
+          </div>
         ) : filteredPendingExperiments.length === 0 ? (
-          <p>No hay experimentos pendientes en esta categoría.</p>
+          <div className="empty-state">
+            <div className="empty-state-icon">✓</div>
+            <h3>No hay experimentos pendientes</h3>
+            <p>
+              Actualmente no existen experimentos pendientes de revisión en esta categoría.
+            </p>
+          </div>
         ) : (
           <div className="experiment-list">
             {filteredPendingExperiments.map((experiment) => {

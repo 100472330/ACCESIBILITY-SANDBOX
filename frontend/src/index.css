@@ -1391,3 +1391,56 @@ button:disabled {
 .secondary-button:hover {
   background: #f3f4f6;
 }
+
+.already-evaluated {
+  opacity: 0.82;
+  border: 1px solid #d1fae5;
+  background: linear-gradient(
+    to bottom right,
+    #f0fdf4,
+    #ffffff
+  );
+}
+
+.already-evaluated:hover {
+  transform: none;
+  box-shadow: none;
+  cursor: default;
+}
+
+.already-evaluated .status-badge {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  border: 1px dashed var(--border-color, #d1d5db);
+  border-radius: 16px;
+  background: rgba(249, 250, 251, 0.75);
+}
+
+.empty-state-icon {
+  width: 48px;
+  height: 48px;
+  margin: 0 auto 1rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #f3f4f6;
+  color: #4b5563;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.empty-state h3 {
+  margin: 0 0 0.5rem;
+}
+
+.empty-state p {
+  margin: 0 auto;
+  max-width: 520px;
+  color: #6b7280;
+}
+
