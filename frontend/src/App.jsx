@@ -16,6 +16,7 @@ import UserView from "./components/UserView";
 
 function App() {
   const [role, setRole] = useState("");
+  const [currentUser, setCurrentUser] = useState(null);
   const [authFlow, setAuthFlow] = useState("");
   const [publicPage, setPublicPage] = useState("home");
   const [experiments, setExperiments] = useState([]);
@@ -83,7 +84,7 @@ function App() {
       setError(err.message || "Error creando experimento");
     }
   }
-}
+
 
   async function handleUpdateStatus(id, status) {
     try {
@@ -298,7 +299,7 @@ function App() {
           <button
             type="button"
             className="role-card"
-            onClick={() => setRole("user")}
+            onClick={() => setAuthFlow("user")}
           >
             <h2>User</h2>
             <p>Evalúa componentes y aporta feedback.</p>
@@ -308,7 +309,7 @@ function App() {
     );
   }
 
-  // 🔹 pantalla sin rol (landing + header + footer)
+  
   if (!role) {
     return (
       <div className="app public-app">
