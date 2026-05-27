@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { buildPreviewHtml } from "../utils/previewHtml";
+import ExperimentPreview from "./ExperimentPreview";
 
 const standardQuestions = [
   { id: "q1", text: "El propósito del componente se entiende rápidamente." },
@@ -199,46 +199,12 @@ function UserView({ experiments, onEvaluate }) {
               : "Componente a evaluar"}
           </h3>
 
-          {selectedExperiment.type === "single" && (
-            <iframe
-              title={`user-preview-${selectedExperiment.id}`}
-              className="preview-frame user-full-preview"
-              sandbox="allow-forms allow-same-origin"
-              srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
-            />
-          )}
-
-          {selectedExperiment.type === "ab" && (
-            <div className="ab-container user-ab-full">
-              <div
-                className={`ab-variant ${
-                  form.preferred_variant === "A" ? "selected" : ""
-                }`}
-              >
-                <h4>Variante A</h4>
-                <iframe
-                  title={`user-preview-a-${selectedExperiment.id}`}
-                  className="preview-frame"
-                  sandbox="allow-forms allow-same-origin"
-                  srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
-                />
-              </div>
-
-              <div
-                className={`ab-variant ${
-                  form.preferred_variant === "B" ? "selected" : ""
-                }`}
-              >
-                <h4>Variante B</h4>
-                <iframe
-                  title={`user-preview-b-${selectedExperiment.id}`}
-                  className="preview-frame"
-                  sandbox="allow-forms allow-same-origin"
-                  srcDoc={buildPreviewHtml(selectedExperiment.variant_b_html)}
-                />
-              </div>
-            </div>
-          )}
+          <ExperimentPreview
+            experiment={selectedExperiment}
+            selectedVariant={form.preferred_variant}
+            variantClassName="user-ab-full"
+            fullWidth
+          />
         </section>
 
         <section className="card">
