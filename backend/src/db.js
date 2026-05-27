@@ -31,6 +31,7 @@ function initDb() {
       CREATE TABLE IF NOT EXISTS evaluations (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         experiment_id INTEGER NOT NULL,
+        user_id INTEGER,
         clarity INTEGER NOT NULL,
         comprehension INTEGER NOT NULL,
         cognitive_load INTEGER NOT NULL,

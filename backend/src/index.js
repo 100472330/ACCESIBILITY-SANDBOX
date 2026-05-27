@@ -299,6 +299,7 @@ app.get("/experiments/published", (_req, res) => {
 app.post("/evaluations", (req, res) => {
   const {
     experiment_id,
+    user_id,
     clarity,
     comprehension,
     cognitive_load,
@@ -308,38 +309,90 @@ app.post("/evaluations", (req, res) => {
     custom_answers,
   } = req.body;
 
-  if (!title || !type || !short_description || !category || !created_by) {
+  if (!experiment_id || !user_id || !clarity || !comprehension || !cognitive_load) {
     return res.status(400).json({ error: "Missing required fields" });
   }
 
-  const query = `
-    INSERT INTO evaluations
-    (experiment_id, clarity, comprehension, cognitive_load, preferred_variant, comment, standard_answers, custom_answers)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `;
-
-  db.run(
-    query,
-    [
-      experiment_id,
-      clarity,
-      comprehension,
-      cognitive_load,
-      preferred_variant || null,
-      comment || "",
-      JSON.stringify(standard_answers || {}),
-      JSON.stringify(custom_answers || {}),
-    ],
-    function (err) {
+  db.get(
+    `
+    SELECT id
+    FROM evaluations
+    WHERE experiment_id = ?
+      AND user_id = ?
+    `,
+    [experiment_id, user_id],
+    (err, existingEvaluation) => {
       if (err) {
-        console.error("ERROR SQL:", err);
         return res.status(500).json({ error: err.message });
       }
 
-      res.status(201).json({
-        id: this.lastID,
-        message: "Evaluation created successfully",
-      });
+      if (existingEvaluation) {
+        return res.status(409).json({
+          error: "User has already evaluated this experiment",
+        });
+      }
+
+      const query = `
+        INSERT INTO evaluations
+        (
+          experiment_id,
+          user_id,
+          clarity,
+          comprehension,
+          cognitive_load,
+          preferred_variant,
+          comment,
+          standard_answers,
+          custom_answers
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+
+      db.run(
+        query,
+        [
+          experiment_id,
+          user_id,
+          clarity,
+          comprehension,
+          cognitive_load,
+          preferred_variant || null,
+          comment || "",
+          JSON.stringify(standard_answers || {}),
+          JSON.stringify(custom_answers || {}),
+        ],
+        function (err) {
+          if (err) {
+            console.error("ERROR SQL:", err);
+            return res.status(500).json({ error: err.message });
+          }
+
+          res.status(201).json({
+            id: this.lastID,
+            message: "Evaluation created successfully",
+          });
+        }
+      );
+    }
+  );
+});
+
+app.get("/evaluations/user/:userId", (req, res) => {
+  const { userId } = req.params;
+
+  db.all(
+    `
+    SELECT experiment_id
+    FROM evaluations
+    WHERE user_id = ?
+    `,
+    [userId],
+    (err, rows) => {
+      if (err) {
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json(rows.map((row) => row.experiment_id));
     }
   );
 });
