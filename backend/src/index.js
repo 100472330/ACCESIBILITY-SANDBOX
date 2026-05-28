@@ -5,9 +5,8 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const app = express();
-const PORT = 4000;
-const JWT_SECRET = "dev-secret-change-later";
-
+const PORT = process.env.PORT || 4000;
+const JWT_SECRET = process.env.JWT_SECRET || "dev-secret-change-later";
 const {
   authenticateToken,
   requireRole,
