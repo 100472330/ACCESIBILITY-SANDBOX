@@ -11,6 +11,7 @@ import {
   loginUser,
   getPendingUsers,
   updateUserStatus,
+  getEvaluatedExperimentIds,
 } from "./api";
 import "./index.css";
 
@@ -26,6 +27,7 @@ function App() {
   const [publicPage, setPublicPage] = useState("home");
   const [experiments, setExperiments] = useState([]);
   const [publishedExperiments, setPublishedExperiments] = useState([]);
+  const [evaluatedExperimentIds, setEvaluatedExperimentIds] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -83,6 +85,9 @@ function App() {
 
       setCurrentUser(parsedUser);
       setRole(parsedUser.role);
+      if (parsedUser.role === "user") {
+        loadEvaluatedExperimentIds(parsedUser.id);
+      }
     }
   }, []);
 
@@ -93,6 +98,18 @@ function App() {
     } catch (err) {
       console.error(err);
       setError("Error loading pending users");
+    }
+  }
+
+  async function loadEvaluatedExperimentIds(userId) {
+    if (!userId) return;
+
+    try {
+      const data = await getEvaluatedExperimentIds(userId);
+      setEvaluatedExperimentIds(data);
+    } catch (err) {
+      console.error(err);
+      setError("Error loading evaluated experiments");
     }
   }
 
@@ -157,6 +174,9 @@ function App() {
   async function handleCreateEvaluation(payload) {
     try {
       await createEvaluation(payload);
+      if (currentUser?.role === "user") {
+        await loadEvaluatedExperimentIds(currentUser.id);
+      }
       setSuccessMessage("Evaluación enviada correctamente");
     } catch (err) {
       console.error(err);
@@ -178,6 +198,9 @@ function App() {
 
       setCurrentUser(data.user);
       setRole(data.user.role);
+      if (data.user.role === "user") {
+        await loadEvaluatedExperimentIds(data.user.id);
+      }
       setAuthFlow("");
       setSuccessMessage("Sesión iniciada correctamente");
     } catch (err) {
@@ -457,7 +480,9 @@ function App() {
 
       {role === "developer" && (
         <DeveloperView
-          experiments={experiments}
+          experiments={experiments.filter(
+            (experiment) => experiment.created_by_id === currentUser?.id
+          )}
           currentUser={currentUser}
           onCreate={handleCreateExperiment}
         />
@@ -477,6 +502,8 @@ function App() {
       {role === "user" && (
         <UserView
           experiments={publishedExperiments}
+          currentUser={currentUser}
+          evaluatedExperimentIds={evaluatedExperimentIds}
           onEvaluate={handleCreateEvaluation}
         />
       )}
