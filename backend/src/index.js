@@ -532,3 +532,37 @@ app.patch("/experiments/:id/approved-questions", (req, res) => {
     });
   });
 });
+
+app.get(
+  "/evaluations/my",
+  authenticateToken,
+  requireRole(["user"]),
+  (req, res) => {
+    db.all(
+      `
+      SELECT
+        evaluations.id,
+        evaluations.created_at,
+        evaluations.preferred_variant,
+        evaluations.comment,
+        experiments.id AS experiment_id,
+        experiments.title AS experiment_title,
+        experiments.type AS experiment_type,
+        experiments.category
+      FROM evaluations
+      JOIN experiments
+        ON evaluations.experiment_id = experiments.id
+      WHERE evaluations.user_id = ?
+      ORDER BY evaluations.created_at DESC
+      `,
+      [req.user.id],
+      (err, rows) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        res.json(rows);
+      }
+    );
+  }
+);

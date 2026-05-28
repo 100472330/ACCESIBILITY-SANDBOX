@@ -183,3 +183,22 @@ export async function getEvaluatedExperimentIds(userId) {
 
   return response.json();
 }
+
+export async function getMyEvaluations() {
+  const response = await fetch(
+    `${API_BASE_URL}/evaluations/my`,
+    {
+      headers: getAuthHeaders(),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+
+    throw new Error(
+      errorData.error || "Failed to fetch evaluations"
+    );
+  }
+
+  return response.json();
+}

@@ -12,6 +12,7 @@ import {
   getPendingUsers,
   updateUserStatus,
   getEvaluatedExperimentIds,
+  getMyEvaluations,
 } from "./api";
 import "./index.css";
 
@@ -28,6 +29,7 @@ function App() {
   const [experiments, setExperiments] = useState([]);
   const [publishedExperiments, setPublishedExperiments] = useState([]);
   const [evaluatedExperimentIds, setEvaluatedExperimentIds] = useState([]);
+  const [myEvaluations, setMyEvaluations] = useState([]);
   const [pendingUsers, setPendingUsers] = useState([]);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
@@ -87,6 +89,7 @@ function App() {
       setRole(parsedUser.role);
       if (parsedUser.role === "user") {
         loadEvaluatedExperimentIds(parsedUser.id);
+        loadMyEvaluations();
       }
       loadExperiments();
       loadPublishedExperiments();
@@ -179,14 +182,29 @@ function App() {
 
   async function handleCreateEvaluation(payload) {
     try {
+      setError("");
+
       await createEvaluation(payload);
+
+      setSuccessMessage("Evaluación enviada correctamente");
+
       if (currentUser?.role === "user") {
         await loadEvaluatedExperimentIds(currentUser.id);
+        await loadMyEvaluations();
       }
-      setSuccessMessage("Evaluación enviada correctamente");
     } catch (err) {
       console.error(err);
-      setError("Error creando evaluación");
+      setError(err.message || "Error creando evaluación");
+    }
+  }
+
+  async function loadMyEvaluations() {
+    try {
+      const data = await getMyEvaluations();
+      setMyEvaluations(data);
+    } catch (err) {
+      console.error(err);
+      setError("Error loading evaluations");
     }
   }
 
@@ -206,10 +224,12 @@ function App() {
       setRole(data.user.role);
       if (data.user.role === "user") {
         await loadEvaluatedExperimentIds(data.user.id);
+        await loadMyEvaluations();
       }
       setAuthFlow("");
       await loadExperiments();
       await loadPublishedExperiments();
+      
 
       if (data.user.role === "moderator") {
         await loadPendingUsers();
@@ -516,6 +536,7 @@ function App() {
           experiments={publishedExperiments}
           currentUser={currentUser}
           evaluatedExperimentIds={evaluatedExperimentIds}
+          myEvaluations={myEvaluations}
           onEvaluate={handleCreateEvaluation}
         />
       )}

@@ -45,11 +45,15 @@ function safeParseArray(value) {
   }
 }
 
-function UserView({ experiments, onEvaluate }) {
+function UserView({
+  experiments,
+  onEvaluate,
+  evaluatedExperimentIds = [],
+  myEvaluations = [],
+}) {
   const [selectedExperimentId, setSelectedExperimentId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [customAnswers, setCustomAnswers] = useState({});
-  const [submittedExperimentIds, setSubmittedExperimentIds] = useState([]);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [form, setForm] = useState(initialForm);
 
@@ -163,11 +167,6 @@ function UserView({ experiments, onEvaluate }) {
       custom_answers: customAnswers,
     });
 
-    setSubmittedExperimentIds((prev) => [
-      ...prev,
-      selectedExperiment.id,
-    ]);
-
     setShowConfirmSubmit(false);
     resetEvaluationForm();
     setSelectedExperimentId(null);
@@ -251,6 +250,73 @@ function UserView({ experiments, onEvaluate }) {
   return (
     <>
       <section className="card">
+        <h2>Mis evaluaciones</h2>
+
+        {myEvaluations.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">📝</div>
+
+            <h3>Todavía no has evaluado experimentos</h3>
+
+            <p>
+              Cuando completes evaluaciones aparecerán aquí.
+            </p>
+          </div>
+        ) : (
+          <div className="experiment-list">
+            {myEvaluations.map((evaluation) => (
+              <div
+                key={evaluation.id}
+                className="experiment-item"
+              >
+                <div className="experiment-card-header">
+                  <div>
+                    <h3>{evaluation.experiment_title}</h3>
+
+                    <p>
+                      Categoría: {evaluation.category}
+                    </p>
+                  </div>
+
+                  <span className="status-badge status-approved">
+                    Evaluado
+                  </span>
+                </div>
+
+                <p>
+                  <strong>Tipo:</strong>{" "}
+                  {evaluation.experiment_type === "ab"
+                    ? "Comparación A/B"
+                    : "Componente único"}
+                </p>
+
+                {evaluation.preferred_variant && (
+                  <p>
+                    <strong>Variante preferida:</strong>{" "}
+                    {evaluation.preferred_variant}
+                  </p>
+                )}
+
+                {evaluation.comment && (
+                  <p>
+                    <strong>Comentario:</strong>{" "}
+                    {evaluation.comment}
+                  </p>
+                )}
+
+                <p>
+                  <strong>Fecha:</strong>{" "}
+                  {new Date(
+                    evaluation.created_at
+                  ).toLocaleString()}
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section className="card">
         <h2>Elige qué quieres evaluar</h2>
         <p className="category-intro">
           Selecciona una categoría para ver los experimentos publicados.
@@ -295,7 +361,7 @@ function UserView({ experiments, onEvaluate }) {
         ) : (
           <div className="experiment-list">
             {filteredExperiments.map((experiment) => {
-              const alreadyEvaluated = submittedExperimentIds.includes(
+              const alreadyEvaluated = evaluatedExperimentIds.includes(
                 experiment.id
               );
 
