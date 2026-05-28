@@ -89,7 +89,7 @@ function ModeratorView({
   return (
     <>
       <section className="card">
-        <h2>Developers pendientes</h2>
+        <h2>Solicitudes de Developer</h2>
         <p className="category-intro">
           Revisa las cuentas de desarrollador que están pendientes de aprobación.
         </p>
@@ -97,7 +97,7 @@ function ModeratorView({
         {pendingUsers.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">✓</div>
-            <h3>No hay developers pendientes</h3>
+            <h3>No hay solicitudes pendientes</h3>
             <p>Actualmente no hay nuevas cuentas de desarrollador esperando revisión.</p>
           </div>
         ) : (
@@ -139,7 +139,7 @@ function ModeratorView({
           </div>
         )}
       </section>
-      
+
       <section className="card">
         <h2>Moderación</h2>
         <p className="category-intro">
