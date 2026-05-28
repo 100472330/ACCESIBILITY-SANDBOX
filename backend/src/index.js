@@ -257,7 +257,8 @@ app.get(
         `
         SELECT *
         FROM experiments
-        WHERE created_by_id = ?
+        WHERE created_by_id = ? 
+        AND archived_at IS NULL
         ORDER BY created_at DESC
         `,
         [req.user.id],
@@ -333,7 +334,7 @@ app.patch(
 
 app.get("/experiments/published", (_req, res) => {
   db.all(
-    `SELECT * FROM experiments WHERE status = 'approved' ORDER BY created_at DESC`,
+    `SELECT * FROM experiments WHERE status = 'approved'  AND archived_at IS NULL ORDER BY created_at DESC`,
     [],
     (err, rows) => {
       if (err) {
@@ -581,3 +582,39 @@ app.get(
   }
 );
 
+app.patch(
+  "/experiments/:id/archive",
+  authenticateToken,
+  requireRole(["developer"]),
+  (req, res) => {
+    const { id } = req.params;
+
+    db.run(
+      `
+      UPDATE experiments
+      SET archived_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+        AND created_by_id = ?
+        AND status IN ('draft', 'pending', 'rejected')
+        AND archived_at IS NULL
+      `,
+      [id, req.user.id],
+      function (err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        if (this.changes === 0) {
+          return res.status(403).json({
+            error: "Experiment cannot be archived",
+          });
+        }
+
+        res.json({
+          message: "Experiment archived successfully",
+          changes: this.changes,
+        });
+      }
+    );
+  }
+);

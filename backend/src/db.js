@@ -24,6 +24,7 @@ function initDb() {
         custom_questions TEXT,
         approved_custom_questions TEXT,
         moderation_comment TEXT,
+        archived_at DATETIME,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);
