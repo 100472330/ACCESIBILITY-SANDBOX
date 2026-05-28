@@ -3,6 +3,7 @@ const cors = require("cors");
 const { db, initDb } = require("./db");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const { seedModerator } = require("./seed");
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -13,6 +14,7 @@ const {
 } = require("./authMiddleware");
 
 initDb();
+seedModerator(db);
 
 app.use(cors());
 app.use(express.json());
