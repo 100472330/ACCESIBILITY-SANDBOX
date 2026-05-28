@@ -8,6 +8,11 @@ const app = express();
 const PORT = 4000;
 const JWT_SECRET = "dev-secret-change-later";
 
+const {
+  authenticateToken,
+  requireRole,
+} = require("./authMiddleware");
+
 initDb();
 
 app.use(cors());
@@ -125,7 +130,7 @@ app.post("/auth/login", (req, res) => {
   );
 });
 
-app.get("/users/pending", (_req, res) => {
+app.get("/users/pending", authenticateToken, requireRole(["moderator"]), (_req, res) => {
   db.all(
     `
     SELECT id, name, email, role, account_status, created_at
@@ -176,7 +181,7 @@ app.patch("/users/:id/status", (req, res) => {
   );
 });
 
-app.post("/experiments", (req, res) => {
+app.post("/experiments", authenticateToken, requireRole(["developer"]), (req, res) => {
   const {
     title,
     description,
@@ -256,7 +261,7 @@ app.get("/experiments", (_req, res) => {
   );
 });
 
-app.patch("/experiments/:id/status", (req, res) => {
+app.patch("/experiments/:id/status", authenticateToken, requireRole(["moderator"]), (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
@@ -296,7 +301,7 @@ app.get("/experiments/published", (_req, res) => {
   );
 });
 
-app.post("/evaluations", (req, res) => {
+app.post("/evaluations", authenticateToken, requireRole(["user"]), (req, res) => {
   const {
     experiment_id,
     user_id,
