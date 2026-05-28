@@ -46,7 +46,7 @@ function escapeCSV(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
-function DeveloperView({ experiments, currentUser, onCreate }) {
+function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment, }) {
   const [results, setResults] = useState({});
   const [form, setForm] = useState({
     title: "",
@@ -67,6 +67,7 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
   const [activeTab, setActiveTab] = useState("");
   const [selectedExperiment, setSelectedExperiment] = useState(null);
   const [showConfirmCreate, setShowConfirmCreate] = useState(false);
+  const [editingExperiment, setEditingExperiment] = useState(null);
   
 
   function handleChange(event) {
@@ -438,6 +439,26 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
     setLoading(true);
 
     try {
+      const payload = {
+          title: form.title,
+          description: form.description,
+          short_description: form.short_description,
+          instructions: form.instructions,
+          type: form.type,
+          category: form.category,
+          created_by: currentUser?.name || "Unknown developer",
+          created_by_id: currentUser?.id || null,
+          status: "pending",
+          variant_a_html: form.variant_a_html,
+          variant_b_html: form.type === "ab" ? form.variant_b_html : "",
+          custom_questions: customQuestions,
+        };
+
+        if (editingExperiment) {
+          await onUpdateExperiment(editingExperiment.id, payload);
+        } else {
+          await onCreate(payload);
+        }
       await onCreate({
         title: form.title,
         description: form.description,
@@ -466,6 +487,7 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
         variant_b_html: "",
       });
 
+      setEditingExperiment(null);
       setCustomQuestions([]);
       setNewQuestion("");
     } finally {
@@ -926,7 +948,11 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
           <section className="card developer-subheader">
             <div className="developer-subheader-row">
               <div>
-                <h2>Crear experimento</h2>
+                <h2>
+                  {editingExperiment
+                    ? "Corregir experimento"
+                    : "Crear experimento"}
+                </h2>
                 <p>Configura un nuevo experimento para enviarlo a moderación.</p>
               </div>
               <button onClick={() => setActiveTab("")}>Volver al panel</button>
@@ -1144,7 +1170,11 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
               )}
 
               <button type="submit" disabled={loading}>
-                {loading ? "Guardando..." : "Crear experimento"}
+                {loading
+                  ? "Guardando..."
+                  : editingExperiment
+                  ? "Reenviar experimento"
+                  : "Crear experimento"}
               </button>
             </form>
           </section>
@@ -1190,6 +1220,33 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
                             <span className={`status-badge status-${experiment.status}`}>
                               {experiment.status}
                             </span>
+                            {experiment.status === "rejected" && (
+                              <button
+                                type="button"
+                                className="secondary-button"
+                                onClick={() => {
+                                  setEditingExperiment(experiment);
+                                  setActiveTab("create");
+
+                                  setForm({
+                                    title: experiment.title || "",
+                                    description: experiment.description || "",
+                                    short_description: experiment.short_description || "",
+                                    instructions: experiment.instructions || "",
+                                    type: experiment.type || "single",
+                                    category: experiment.category || "form",
+                                    variant_a_html: experiment.variant_a_html || "",
+                                    variant_b_html: experiment.variant_b_html || "",
+                                  });
+
+                                  setCustomQuestions(
+                                    safeParseArray(experiment.custom_questions)
+                                  );
+                                }}
+                              >
+                                Corregir y reenviar
+                              </button>
+                            )}
                           </div>
 
                           <div className="experiment-card-meta">

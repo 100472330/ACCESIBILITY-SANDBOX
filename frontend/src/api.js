@@ -202,3 +202,18 @@ export async function getMyEvaluations() {
 
   return response.json();
 }
+
+export async function updateExperiment(id, payload) {
+  const response = await fetch(`${API_BASE_URL}/experiments/${id}`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to update experiment");
+  }
+
+  return response.json();
+}

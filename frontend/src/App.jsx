@@ -13,6 +13,7 @@ import {
   updateUserStatus,
   getEvaluatedExperimentIds,
   getMyEvaluations,
+  updateExperiment,
 } from "./api";
 import "./index.css";
 
@@ -289,6 +290,21 @@ function App() {
     }
   }
 
+  async function handleUpdateExperiment(id, payload) {
+    try {
+      setError("");
+
+      await updateExperiment(id, payload);
+
+      setSuccessMessage("Experimento corregido y reenviado a moderación");
+
+      await loadExperiments();
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error actualizando experimento");
+    }
+  }
+
   function renderAuthFlow() {
     if (authFlow === "developer") {
       return (
@@ -517,6 +533,7 @@ function App() {
           )}
           currentUser={currentUser}
           onCreate={handleCreateExperiment}
+          onUpdateExperiment={handleUpdateExperiment}
         />
       )}
 
