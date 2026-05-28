@@ -46,7 +46,7 @@ function escapeCSV(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
-function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment, }) {
+function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment, onArchiveExperiment,}) {
   const [results, setResults] = useState({});
   const [form, setForm] = useState({
     title: "",
@@ -68,6 +68,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
   const [selectedExperiment, setSelectedExperiment] = useState(null);
   const [showConfirmCreate, setShowConfirmCreate] = useState(false);
   const [editingExperiment, setEditingExperiment] = useState(null);
+  const [archiveTarget, setArchiveTarget] = useState(null);
   
 
   function handleChange(event) {
@@ -720,65 +721,36 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                     <p>{bestQuestion.text} ({bestValue.toFixed(2)} / 5)</p>
                   </div>
                 )}
-              </>
-            )}
-          </div>
 
-          <div className="card detail-block">
-            <h3>Exportación</h3>
+                <div className="card detail-block detail-block-wide">
+                  <h3>Resultados por pregunta estándar</h3>
 
-            {experimentResults && evaluations.length > 0 ? (
-              <div className="detail-actions">
-                <button
-                  className="export-btn"
-                  onClick={() => exportResultsToCSV(selectedExperiment.id)}
-                >
-                  Exportar CSV
-                </button>
+                  <div className="standard-results">
+                    {sortedQuestions.map((question) => {
+                      const value = questionAverages[question.id];
+                      if (value === null || value === undefined) return null;
 
-                <button
-                  className="export-btn"
-                  onClick={() => exportAggregatedResultsToCSV(selectedExperiment.id)}
-                >
-                  Exportar resumen CSV
-                </button>
-              </div>
-            ) : (
-              <p>La exportación estará disponible cuando existan evaluaciones.</p>
-            )}
-          </div>
+                      return (
+                        <div key={question.id} className="metric-block">
+                          <p>
+                            <strong>{question.text}</strong>{" "}
+                            {value.toFixed(2)} / 5
+                          </p>
 
-          {experimentResults && evaluations.length > 0 && (
-            <>
-              <div className="card detail-block detail-block-wide">
-                <h3>Resultados por pregunta estándar</h3>
-
-                <div className="standard-results">
-                  {sortedQuestions.map((question) => {
-                    const value = questionAverages[question.id];
-                    if (value === null || value === undefined) return null;
-
-                    return (
-                      <div key={question.id} className="metric-block">
-                        <p>
-                          <strong>{question.text}</strong>{" "}
-                          {value.toFixed(2)} / 5
-                        </p>
-
-                        <div className="metric-bar">
-                          <div
-                            className="metric-fill"
-                            style={{
-                              width: `${(value / 5) * 100}%`,
-                              backgroundColor: getMetricColor(value),
-                            }}
-                          />
+                          <div className="metric-bar">
+                            <div
+                              className="metric-fill"
+                              style={{
+                                width: `${(value / 5) * 100}%`,
+                                backgroundColor: getMetricColor(value),
+                              }}
+                            />
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
 
               {selectedExperiment.type === "ab" && (countA + countB) > 0 && (
                 <div className="card detail-block detail-block-wide">
@@ -889,6 +861,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
               )}
             </>
           )}
+        </div>
         </section>
       </>
     );
@@ -1222,12 +1195,39 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                           <div className="experiment-card-header">
                             <div>
                               <h3>{experiment.title}</h3>
-                              <p>{experiment.description || "Sin descripción"}</p>
+                              <p>
+                                {experiment.short_description || "Sin descripción breve"}
+                              </p>
                             </div>
 
                             <span className={`status-badge status-${experiment.status}`}>
                               {experiment.status}
                             </span>
+                          </div>
+
+                          <div className="experiment-card-meta">
+                            <p><strong>Tipo:</strong> {experiment.type}</p>
+                            <p><strong>Categoría:</strong> {experiment.category || "Sin categoría"}</p>
+                            <p>
+                              <strong>Preguntas propuestas:</strong>{" "}
+                              {customQuestionsList.length}
+                            </p>
+                            <p>
+                              <strong>Preguntas aprobadas:</strong>{" "}
+                              {approvedQuestionsList.length}
+                            </p>
+                          </div>
+
+                          <div className="experiment-card-actions">
+                            <button
+                              onClick={() => openExperimentDetail(experiment)}
+                              disabled={loadingResults[experiment.id]}
+                            >
+                              {loadingResults[experiment.id]
+                                ? "Cargando..."
+                                : "Ver resultados"}
+                            </button>
+
                             {experiment.status === "rejected" && (
                               <button
                                 type="button"
@@ -1255,30 +1255,21 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                                 Corregir y reenviar
                               </button>
                             )}
-                          </div>
 
-                          <div className="experiment-card-meta">
-                            <p><strong>Tipo:</strong> {experiment.type}</p>
-                            <p><strong>Categoría:</strong> {experiment.category || "Sin categoría"}</p>
-                            <p><strong>Autor:</strong> {experiment.created_by}</p>
-                            <p>
-                              <strong>Preguntas propuestas:</strong>{" "}
-                              {customQuestionsList.length}
-                            </p>
-                            <p>
-                              <strong>Preguntas aprobadas:</strong>{" "}
-                              {approvedQuestionsList.length}
-                            </p>
+                            {[
+                              "draft",
+                              "pending",
+                              "rejected",
+                            ].includes(experiment.status) && (
+                              <button
+                                type="button"
+                                className="reject-btn"
+                                onClick={() => setArchiveTarget(experiment)}
+                              >
+                                Archivar
+                              </button>
+                            )}
                           </div>
-
-                          <button
-                            onClick={() => openExperimentDetail(experiment)}
-                            disabled={loadingResults[experiment.id]}
-                          >
-                            {loadingResults[experiment.id]
-                              ? "Cargando..."
-                              : "Ver resultados"}
-                          </button>
                         </div>
                       );
                     })}
@@ -1300,6 +1291,20 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
           onConfirm={confirmCreateExperiment}
         />
       )}
+
+      {archiveTarget && (
+          <ConfirmModal
+            title="Archivar experimento"
+            message={`¿Seguro que quieres archivar "${archiveTarget.title}"? Dejará de aparecer en tus experimentos.`}
+            confirmLabel="Archivar"
+            confirmClassName="reject-btn"
+            onCancel={() => setArchiveTarget(null)}
+            onConfirm={async () => {
+              await onArchiveExperiment(archiveTarget.id);
+              setArchiveTarget(null);
+            }}
+          />
+        )}
     </>
   );
 }

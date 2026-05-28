@@ -221,3 +221,17 @@ export async function updateExperiment(id, payload) {
 
   return response.json();
 }
+
+export async function archiveExperiment(id) {
+  const response = await fetch(`${API_BASE_URL}/experiments/${id}/archive`, {
+    method: "PATCH",
+    headers: getAuthHeaders(),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to archive experiment");
+  }
+
+  return response.json();
+}

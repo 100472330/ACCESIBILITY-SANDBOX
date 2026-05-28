@@ -14,6 +14,7 @@ import {
   getEvaluatedExperimentIds,
   getMyEvaluations,
   updateExperiment,
+  archiveExperiment,
 } from "./api";
 import "./index.css";
 
@@ -305,6 +306,21 @@ function App() {
     }
   }
 
+  async function handleArchiveExperiment(id) {
+    try {
+      setError("");
+
+      await archiveExperiment(id);
+
+      setSuccessMessage("Experimento archivado correctamente");
+
+      await loadExperiments();
+    } catch (err) {
+      console.error(err);
+      setError(err.message || "Error archivando experimento");
+    }
+  }
+
   function renderAuthFlow() {
     if (authFlow === "developer") {
       return (
@@ -534,6 +550,7 @@ function App() {
           currentUser={currentUser}
           onCreate={handleCreateExperiment}
           onUpdateExperiment={handleUpdateExperiment}
+          onArchiveExperiment={handleArchiveExperiment}
         />
       )}
 

@@ -203,6 +203,9 @@ button:disabled {
 }
 
 .experiment-item {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   margin-top: var(--space-2);
   margin-right: 0;
   border: 1px solid var(--border);
@@ -218,6 +221,14 @@ button:disabled {
 
 .experiment-item.expanded .preview-frame {
   height: 550px;
+}
+
+.experiment-card-actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin-top: auto;
+  padding-top: var(--space-3);
 }
 
 .error {
