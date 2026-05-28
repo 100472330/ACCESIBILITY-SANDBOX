@@ -1005,7 +1005,10 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
 
               <label htmlFor="variant_a_html">HTML variante A</label>
               <div className="info-banner">
-                <strong>JavaScript permitido:</strong> se admite JavaScript básico dentro de etiquetas &lt;script&gt; para componentes interactivos como menús desplegables o acordeones. El código se ejecuta dentro de un iframe sandbox aislado sin acceso al sistema principal.
+                <strong>JavaScript interactivo permitido.</strong>
+                <p>
+                  Puedes incluir JavaScript básico dentro de etiquetas &lt;script&gt; para componentes como menús desplegables, acordeones o tabs. Por seguridad, no se permite acceso a cookies, almacenamiento local, red ni al contexto principal de la aplicación.
+                </p>
               </div>
               <textarea
                 id="variant_a_html"
