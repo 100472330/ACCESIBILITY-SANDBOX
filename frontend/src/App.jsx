@@ -469,8 +469,16 @@ function App() {
 
         <main className="public-main">
           <div className="public-content">
-            {successMessage && <p className="success">{successMessage}</p>}
-            {error && <p className="error">{error}</p>}
+            {successMessage && (
+              <p className="success" role="status" aria-live="polite">
+                {successMessage}
+              </p>
+            )}
+            {error && (
+              <p className="error" role="alert" aria-live="assertive">
+                {error}
+              </p>
+            )}
 
             {authFlow ? renderAuthFlow() : renderPublicPage()}
           </div>
@@ -518,8 +526,16 @@ function App() {
         </div>
       </header>
 
-      {successMessage && <p className="success">{successMessage}</p>}
-      {error && <p className="error">{error}</p>}
+      {successMessage && (
+        <p className="success" role="status" aria-live="polite">
+          {successMessage}
+        </p>
+      )}
+      {error && (
+        <p className="error" role="alert" aria-live="assertive">
+          {error}
+        </p>
+      )}
 
       {role === "developer" && (
         <section className="card role-banner developer-banner">

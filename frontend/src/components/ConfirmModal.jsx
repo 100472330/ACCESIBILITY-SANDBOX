@@ -1,3 +1,5 @@
+import { useEffect, useRef } from "react";
+
 function ConfirmModal({
   title,
   message,
@@ -8,10 +10,21 @@ function ConfirmModal({
   onCancel,
   children,
 }) {
+  const cancelButtonRef = useRef(null);
+
+  useEffect(() => {
+    cancelButtonRef.current?.focus();
+  }, []);
+
   return (
     <div className="modal-backdrop">
-      <div className="modal-card">
-        <h3>{title}</h3>
+      <div
+        className="modal-card"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-modal-title"
+      >
+        <h3 id="confirm-modal-title">{title}</h3>
         <p>{message}</p>
 
         {children}
@@ -21,6 +34,7 @@ function ConfirmModal({
             type="button"
             className="secondary-button"
             onClick={onCancel}
+            ref={cancelButtonRef}
           >
             {cancelLabel}
           </button>

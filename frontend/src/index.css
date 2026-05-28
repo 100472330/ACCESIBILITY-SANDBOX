@@ -166,7 +166,7 @@ button {
 }
 
 button:hover {
-  background: #eef2ff;
+  filter: brightness(0.98);
 }
 
 button:active {

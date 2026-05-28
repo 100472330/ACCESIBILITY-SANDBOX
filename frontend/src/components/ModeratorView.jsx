@@ -369,11 +369,14 @@ function ModeratorView({
           onConfirm={confirmStatusChange}
         >
           {confirmAction.status === "rejected" && (
-            <textarea
-              placeholder="Explica brevemente por qué se rechaza el experimento..."
-              value={rejectionComment}
-              onChange={(e) => setRejectionComment(e.target.value)}
-            />
+            <label>
+              <span>Motivo del rechazo</span>
+              <textarea
+                placeholder="Explica brevemente por qué se rechaza el experimento..."
+                value={rejectionComment}
+                onChange={(e) => setRejectionComment(e.target.value)}
+              />
+            </label>
           )}
         </ConfirmModal>
       )}
