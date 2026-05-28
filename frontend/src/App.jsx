@@ -88,6 +88,12 @@ function App() {
       if (parsedUser.role === "user") {
         loadEvaluatedExperimentIds(parsedUser.id);
       }
+      loadExperiments();
+      loadPublishedExperiments();
+
+      if (parsedUser.role === "moderator") {
+        loadPendingUsers();
+      }
     }
   }, []);
 
@@ -202,6 +208,12 @@ function App() {
         await loadEvaluatedExperimentIds(data.user.id);
       }
       setAuthFlow("");
+      await loadExperiments();
+      await loadPublishedExperiments();
+
+      if (data.user.role === "moderator") {
+        await loadPendingUsers();
+      }
       setSuccessMessage("Sesión iniciada correctamente");
     } catch (err) {
       console.error(err);

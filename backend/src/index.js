@@ -247,19 +247,49 @@ app.post("/experiments", authenticateToken, requireRole(["developer"]), (req, re
   );
 });
 
-app.get("/experiments", (_req, res) => {
-  db.all(
-    `SELECT * FROM experiments ORDER BY created_at DESC`,
-    [],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
+app.get(
+  "/experiments",
+  authenticateToken,
+  requireRole(["developer", "moderator"]),
+  (req, res) => {
+    if (req.user.role === "developer") {
+      db.all(
+        `
+        SELECT *
+        FROM experiments
+        WHERE created_by_id = ?
+        ORDER BY created_at DESC
+        `,
+        [req.user.id],
+        (err, rows) => {
+          if (err) {
+            return res.status(500).json({ error: err.message });
+          }
 
-      res.json(rows);
+          return res.json(rows);
+        }
+      );
+
+      return;
     }
-  );
-});
+
+    db.all(
+      `
+      SELECT *
+      FROM experiments
+      ORDER BY created_at DESC
+      `,
+      [],
+      (err, rows) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        res.json(rows);
+      }
+    );
+  }
+);
 
 app.patch("/experiments/:id/status", authenticateToken, requireRole(["moderator"]), (req, res) => {
   const { id } = req.params;

@@ -10,10 +10,14 @@ function getAuthHeaders() {
 }
 
 export async function getExperiments() {
-  const response = await fetch(`${API_BASE_URL}/experiments`);
+  const response = await fetch(`${API_BASE_URL}/experiments`, {
+    headers: getAuthHeaders(),
+  });
+
   if (!response.ok) {
     throw new Error("Failed to fetch experiments");
   }
+
   return response.json();
 }
 
