@@ -1249,6 +1249,13 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                             )}
                           </div>
 
+                          {experiment.status === "rejected" && experiment.moderation_comment && (
+                            <div className="moderation-comment-box">
+                              <h4>Motivo del rechazo</h4>
+                              <p>{experiment.moderation_comment}</p>
+                            </div>
+                          )}
+
                           <div className="experiment-card-meta">
                             <p><strong>Tipo:</strong> {experiment.type}</p>
                             <p><strong>Categoría:</strong> {experiment.category || "Sin categoría"}</p>

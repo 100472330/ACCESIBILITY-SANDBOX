@@ -23,6 +23,7 @@ function initDb() {
         variant_b_html TEXT,
         custom_questions TEXT,
         approved_custom_questions TEXT,
+        moderation_comment TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       )
     `);

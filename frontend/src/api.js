@@ -43,15 +43,19 @@ export async function createExperiment(payload) {
 
   return response.json();
 }
-export async function updateExperimentStatus(id, status) {
+export async function updateExperimentStatus(id, status, moderationComment = "") {
   const response = await fetch(`${API_BASE_URL}/experiments/${id}/status`, {
     method: "PATCH",
     headers: getAuthHeaders(),
-    body: JSON.stringify({ status }),
+    body: JSON.stringify({
+      status,
+      moderation_comment: moderationComment,
+    }),
   });
 
   if (!response.ok) {
-    throw new Error("Failed to update experiment status");
+    const errorData = await response.json();
+    throw new Error(errorData.error || "Failed to update experiment status");
   }
 
   return response.json();

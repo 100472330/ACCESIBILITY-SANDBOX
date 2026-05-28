@@ -1509,3 +1509,20 @@ button:disabled {
   line-height: 1.5;
 }
 
+.moderation-comment-box {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.moderation-comment-box h4 {
+  margin: 0 0 0.5rem;
+}
+
+.moderation-comment-box p {
+  margin: 0;
+  color: var(--text-muted);
+}
+

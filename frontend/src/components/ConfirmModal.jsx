@@ -6,12 +6,15 @@ function ConfirmModal({
   confirmClassName = "",
   onConfirm,
   onCancel,
+  children,
 }) {
   return (
     <div className="modal-backdrop">
       <div className="modal-card">
         <h3>{title}</h3>
         <p>{message}</p>
+
+        {children}
 
         <div className="modal-actions">
           <button

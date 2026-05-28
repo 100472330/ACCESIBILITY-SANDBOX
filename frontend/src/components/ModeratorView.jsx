@@ -14,6 +14,7 @@ function ModeratorView({
   const [selectedCategory, setSelectedCategory] = useState("");
   const [approvedQuestionsByExperiment, setApprovedQuestionsByExperiment] = useState({});
   const [confirmAction, setConfirmAction] = useState(null);
+  const [rejectionComment, setRejectionComment] = useState("");
 
   const pendingExperiments = experiments.filter(
     (experiment) => experiment.status === "pending"
@@ -73,10 +74,8 @@ function ModeratorView({
   }
 
   function requestStatusChange(experiment, status) {
-    setConfirmAction({
-      experiment,
-      status,
-    });
+    setConfirmAction({ experiment, status });
+    setRejectionComment("");
   }
 
   async function confirmStatusChange() {
@@ -84,6 +83,12 @@ function ModeratorView({
 
     await onUpdateStatus(confirmAction.experiment.id, confirmAction.status);
     setConfirmAction(null);
+
+    await onUpdateStatus(
+      confirmAction.experiment.id,
+      confirmAction.status,
+      confirmAction.status === "rejected" ? rejectionComment : ""
+    );
   }
 
   return (
@@ -363,7 +368,15 @@ function ModeratorView({
           }
           onCancel={() => setConfirmAction(null)}
           onConfirm={confirmStatusChange}
-        />
+        >
+          {confirmAction.status === "rejected" && (
+            <textarea
+              placeholder="Explica brevemente por qué se rechaza el experimento..."
+              value={rejectionComment}
+              onChange={(e) => setRejectionComment(e.target.value)}
+            />
+          )}
+        </ConfirmModal>
       )}
     </>
   );

@@ -291,31 +291,45 @@ app.get(
   }
 );
 
-app.patch("/experiments/:id/status", authenticateToken, requireRole(["moderator"]), (req, res) => {
-  const { id } = req.params;
-  const { status } = req.body;
+app.patch(
+  "/experiments/:id/status",
+  authenticateToken,
+  requireRole(["moderator"]),
+  (req, res) => {
+    const { id } = req.params;
+    const { status, moderation_comment } = req.body;
 
-  const allowedStatuses = ["draft", "pending", "approved", "rejected"];
+    const allowedStatuses = ["draft", "pending", "approved", "rejected"];
 
-  if (!allowedStatuses.includes(status)) {
-    return res.status(400).json({ error: "Invalid status" });
-  }
-
-  db.run(
-    `UPDATE experiments SET status = ? WHERE id = ?`,
-    [status, id],
-    function (err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-
-      res.json({
-        message: "Experiment status updated successfully",
-        changes: this.changes,
-      });
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({ error: "Invalid status" });
     }
-  );
-});
+
+    db.run(
+      `
+      UPDATE experiments
+      SET status = ?,
+          moderation_comment = ?
+      WHERE id = ?
+      `,
+      [
+        status,
+        status === "rejected" ? moderation_comment || "" : "",
+        id,
+      ],
+      function (err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        res.json({
+          message: "Experiment status updated successfully",
+          changes: this.changes,
+        });
+      }
+    );
+  }
+);
 
 app.get("/experiments/published", (_req, res) => {
   db.all(
