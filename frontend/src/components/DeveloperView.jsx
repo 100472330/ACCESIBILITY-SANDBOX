@@ -359,11 +359,19 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
     const lowered = html.toLowerCase();
 
     return (
-      lowered.includes("<script") ||
-      lowered.includes("onclick=") ||
-      lowered.includes("onerror=") ||
-      lowered.includes("onload=") ||
-      lowered.includes("onmouseover=")
+      lowered.includes("window.parent") ||
+      lowered.includes("parent.") ||
+      lowered.includes("window.top") ||
+      lowered.includes("top.") ||
+      lowered.includes("document.cookie") ||
+      lowered.includes("localstorage") ||
+      lowered.includes("sessionstorage") ||
+      lowered.includes("fetch(") ||
+      lowered.includes("xmlhttprequest") ||
+      lowered.includes("eval(") ||
+      lowered.includes("function(") ||
+      lowered.includes("import(") ||
+      lowered.includes("javascript:")
     );
   }
 
@@ -579,7 +587,7 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
               <iframe
                 title={`developer-detail-preview-${selectedExperiment.id}`}
                 className="preview-frame"
-                sandbox="allow-forms allow-same-origin"
+                sandbox="allow-scripts allow-forms"
                 srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
               />
             )}
@@ -591,7 +599,7 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
                   <iframe
                     title={`developer-detail-preview-a-${selectedExperiment.id}`}
                     className="preview-frame"
-                    sandbox="allow-forms allow-same-origin"
+                    sandbox="allow-scripts allow-forms"
                     srcDoc={buildPreviewHtml(selectedExperiment.variant_a_html)}
                   />
                 </div>
@@ -601,7 +609,7 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
                   <iframe
                     title={`developer-detail-preview-b-${selectedExperiment.id}`}
                     className="preview-frame"
-                    sandbox="allow-forms allow-same-origin"
+                    sandbox="allow-scripts allow-forms"
                     srcDoc={buildPreviewHtml(selectedExperiment.variant_b_html)}
                   />
                 </div>
@@ -996,6 +1004,9 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
               </select>
 
               <label htmlFor="variant_a_html">HTML variante A</label>
+              <div className="info-banner">
+                <strong>JavaScript permitido:</strong> se admite JavaScript básico dentro de etiquetas &lt;script&gt; para componentes interactivos como menús desplegables o acordeones. El código se ejecuta dentro de un iframe sandbox aislado sin acceso al sistema principal.
+              </div>
               <textarea
                 id="variant_a_html"
                 name="variant_a_html"
@@ -1011,7 +1022,7 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
                   <iframe
                     title="developer-preview-a"
                     className="preview-frame"
-                    sandbox="allow-forms allow-same-origin"
+                    sandbox="allow-scripts allow-forms"
                     srcDoc={buildPreviewHtml(form.variant_a_html)}
                   />
                 </div>
@@ -1035,7 +1046,7 @@ function DeveloperView({ experiments, currentUser, onCreate }) {
                       <iframe
                         title="developer-preview-b"
                         className="preview-frame"
-                        sandbox="allow-forms allow-same-origin"
+                        sandbox="allow-scripts allow-forms"
                         srcDoc={buildPreviewHtml(form.variant_b_html)}
                       />
                     </div>

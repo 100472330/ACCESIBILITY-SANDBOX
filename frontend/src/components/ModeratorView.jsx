@@ -281,7 +281,7 @@ function ModeratorView({
                         <iframe
                           title={`preview-${experiment.id}`}
                           className="preview-frame"
-                          sandbox="allow-forms allow-same-origin"
+                          sandbox="allow-scripts allow-forms"
                           srcDoc={buildPreviewHtml(
                             experiment.variant_a_html
                           )}
@@ -295,7 +295,7 @@ function ModeratorView({
                             <iframe
                               title={`preview-a-${experiment.id}`}
                               className="preview-frame"
-                              sandbox="allow-forms allow-same-origin"
+                              sandbox="allow-scripts allow-forms"
                               srcDoc={buildPreviewHtml(
                                 experiment.variant_a_html
                               )}
@@ -307,7 +307,7 @@ function ModeratorView({
                             <iframe
                               title={`preview-b-${experiment.id}`}
                               className="preview-frame"
-                              sandbox="allow-forms allow-same-origin"
+                              sandbox="allow-scripts allow-forms"
                               srcDoc={buildPreviewHtml(
                                 experiment.variant_b_html
                               )}

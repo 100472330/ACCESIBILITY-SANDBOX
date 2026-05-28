@@ -13,7 +13,7 @@ function ExperimentPreview({
       <iframe
         title={`preview-${experiment.id}`}
         className={`preview-frame ${fullWidth ? "user-full-preview" : ""}`}
-        sandbox="allow-forms allow-same-origin"
+        sandbox="allow-scripts allow-forms"
         srcDoc={buildPreviewHtml(experiment.variant_a_html)}
       />
     );
@@ -31,7 +31,7 @@ function ExperimentPreview({
           <iframe
             title={`preview-a-${experiment.id}`}
             className="preview-frame"
-            sandbox="allow-forms allow-same-origin"
+            sandbox="allow-scripts allow-forms"
             srcDoc={buildPreviewHtml(experiment.variant_a_html)}
           />
         </div>
@@ -45,7 +45,7 @@ function ExperimentPreview({
           <iframe
             title={`preview-b-${experiment.id}`}
             className="preview-frame"
-            sandbox="allow-forms allow-same-origin"
+            sandbox="allow-scripts allow-forms"
             srcDoc={buildPreviewHtml(experiment.variant_b_html)}
           />
         </div>
