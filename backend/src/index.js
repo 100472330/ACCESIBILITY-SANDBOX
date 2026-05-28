@@ -491,9 +491,11 @@ app.get("/experiments/:id/results", (req, res) => {
   );
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend running on http://localhost:${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`Backend running on http://localhost:${PORT}`);
+  });
+}
 
 app.patch("/experiments/:id/category", (req, res) => {
   const { id } = req.params;
@@ -548,6 +550,8 @@ app.patch("/experiments/:id/approved-questions", (req, res) => {
     });
   });
 });
+
+module.exports = app;
 
 app.get(
   "/evaluations/my",
