@@ -565,6 +565,14 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
           </div>
         </section>
 
+        {selectedExperiment.status === "rejected" &&
+          selectedExperiment.moderation_comment && (
+            <section className="card moderation-feedback-box">
+              <h4>Feedback del moderador</h4>
+              <p>{selectedExperiment.moderation_comment}</p>
+            </section>
+          )}
+
         <section className="developer-detail-grid">
           <div
             className={`card detail-block ${
@@ -1248,13 +1256,6 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                               </button>
                             )}
                           </div>
-
-                          {experiment.status === "rejected" && experiment.moderation_comment && (
-                            <div className="moderation-comment-box">
-                              <h4>Motivo del rechazo</h4>
-                              <p>{experiment.moderation_comment}</p>
-                            </div>
-                          )}
 
                           <div className="experiment-card-meta">
                             <p><strong>Tipo:</strong> {experiment.type}</p>

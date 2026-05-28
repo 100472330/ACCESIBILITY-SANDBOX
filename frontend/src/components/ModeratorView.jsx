@@ -81,14 +81,13 @@ function ModeratorView({
   async function confirmStatusChange() {
     if (!confirmAction) return;
 
-    await onUpdateStatus(confirmAction.experiment.id, confirmAction.status);
-    setConfirmAction(null);
-
     await onUpdateStatus(
       confirmAction.experiment.id,
       confirmAction.status,
       confirmAction.status === "rejected" ? rejectionComment : ""
     );
+
+    setConfirmAction(null);
   }
 
   return (

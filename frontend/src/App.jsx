@@ -141,7 +141,7 @@ function App() {
   }
 
 
-  async function handleUpdateStatus(id, status) {
+  async function handleUpdateStatus(id, status, moderationComment = "") {
     try {
       await updateExperimentStatus(id, status, moderationComment);
       setSuccessMessage(
