@@ -362,45 +362,129 @@ function App() {
   }
   
   // public pages
+  const publicPageDetails = {
+    help: {
+      title: "Ayuda",
+      intro:
+        "Encuentra el punto de entrada adecuado según tu rol y el tipo de tarea que quieres realizar en Accessibility Sandbox.",
+      sections: [
+        {
+          heading: "Usuarios evaluadores",
+          body: "Accede como usuario final para completar evaluaciones publicadas, comparar variantes A/B y enviar observaciones sobre claridad, comprensión y esfuerzo cognitivo.",
+        },
+        {
+          heading: "Moderadores",
+          body: "Revisa experimentos pendientes, valida que la evaluación sea comprensible y decide si cada propuesta está lista para publicarse.",
+        },
+        {
+          heading: "Desarrolladores",
+          body: "Crea experimentos, prepara variantes accesibles y consulta resultados para iterar sobre componentes web con evidencia estructurada.",
+        },
+      ],
+    },
+    contact: {
+      title: "Contacto",
+      intro:
+        "Si necesitas soporte, tienes una incidencia o quieres proponer una colaboración, escribe al equipo responsable del proyecto.",
+      sections: [
+        {
+          heading: "Soporte general",
+          body: "accessibility-sandbox@uc3m.example",
+        },
+        {
+          heading: "Atención académica",
+          body: "Para consultas sobre investigaciones, sesiones de evaluación o participación de estudiantes, indica tu nombre, rol y contexto de uso.",
+        },
+        {
+          heading: "Dirección de referencia",
+          body: "Campus de Leganés, Av. Universidad 30, 28911 Leganés, Madrid.",
+        },
+        {
+          heading: "Tiempo de respuesta",
+          body: "Las solicitudes se revisan en días laborables. Las incidencias que bloquean evaluaciones activas tienen prioridad.",
+        },
+      ],
+    },
+    privacy: {
+      title: "Privacidad",
+      intro:
+        "La plataforma limita la recogida de información a lo necesario para autenticar participantes, moderar experimentos y analizar evaluaciones.",
+      sections: [
+        {
+          heading: "Datos almacenados",
+          body: "Se guardan perfiles de acceso, experimentos creados, decisiones de moderación, respuestas de evaluación y comentarios asociados.",
+        },
+        {
+          heading: "Uso de la información",
+          body: "Los datos se utilizan para investigación, mejora de componentes y seguimiento del proceso de evaluación. No se venden ni se comparten con fines comerciales.",
+        },
+        {
+          heading: "Control y revisión",
+          body: "Puedes solicitar revisión, rectificación o eliminación de datos vinculados a tu cuenta contactando con el equipo del proyecto.",
+        },
+      ],
+    },
+    about: {
+      title: "About us",
+      intro:
+        "Accessibility Sandbox es un prototipo académico para estudiar cómo pequeñas decisiones de interfaz afectan a la accesibilidad cognitiva.",
+      sections: [
+        {
+          heading: "Propósito",
+          body: "Ayudar a equipos docentes, investigadores y desarrolladores a comparar componentes web de forma controlada y comprensible.",
+        },
+        {
+          heading: "Método",
+          body: "La plataforma combina roles diferenciados, moderación previa, comparaciones A/B y evaluaciones estructuradas para generar evidencia accionable.",
+        },
+        {
+          heading: "Compromiso",
+          body: "El proyecto prioriza claridad, trazabilidad y respeto por las personas que participan en las evaluaciones.",
+        },
+      ],
+    },
+  };
+
+  function renderPublicInfoPage(pageKey) {
+    const page = publicPageDetails[pageKey];
+
+    return (
+      <section className="card login-card public-info-card">
+        <p className="login-tag">Información pública</p>
+        <h1>{page.title}</h1>
+        <p className="public-info-intro">{page.intro}</p>
+
+        <div className="public-info-grid">
+          {page.sections.map((section) => (
+            <article className="public-info-item" key={section.heading}>
+              <h2>{section.heading}</h2>
+              <p>{section.body}</p>
+            </article>
+          ))}
+        </div>
+
+        <button type="button" onClick={() => setPublicPage("home")}>
+          Volver
+        </button>
+      </section>
+    );
+  }
+
   function renderPublicPage() {
     if (publicPage === "help") {
-      return (
-        <section className="card login-card">
-          <h1>Ayuda</h1>
-          <p>Selecciona un rol para empezar a usar la plataforma.</p>
-          <button onClick={() => setPublicPage("home")}>Volver</button>
-        </section>
-      );
+      return renderPublicInfoPage("help");
     }
 
     if (publicPage === "contact") {
-      return (
-        <section className="card login-card">
-          <h1>Contacto</h1>
-          <p>Para soporte o dudas, contacta con el equipo.</p>
-          <button onClick={() => setPublicPage("home")}>Volver</button>
-        </section>
-      );
+      return renderPublicInfoPage("contact");
     }
 
     if (publicPage === "privacy") {
-      return (
-        <section className="card login-card">
-          <h1>Privacidad</h1>
-          <p>Solo se almacenan datos de evaluación para análisis.</p>
-          <button onClick={() => setPublicPage("home")}>Volver</button>
-        </section>
-      );
+      return renderPublicInfoPage("privacy");
     }
 
     if (publicPage === "about") {
-      return (
-        <section className="card login-card">
-          <h1>About us</h1>
-          <p>Proyecto académico sobre accesibilidad cognitiva.</p>
-          <button onClick={() => setPublicPage("home")}>Volver</button>
-        </section>
-      );
+      return renderPublicInfoPage("about");
     }
 
     // HOME
@@ -485,16 +569,34 @@ function App() {
         </main>
 
         <footer className="public-footer">
-          <button onClick={() => setPublicPage("help")}>Ayuda</button>
-          <button onClick={() => setPublicPage("contact")}>
-            Contacto
-          </button>
-          <button onClick={() => setPublicPage("privacy")}>
-            Privacidad
-          </button>
-          <button onClick={() => setPublicPage("about")}>
-            About us
-          </button>
+          <div className="public-footer-inner">
+            <div className="public-footer-summary">
+              <strong>Accessibility Sandbox</strong>
+              <p>
+                Entorno académico para evaluar accesibilidad cognitiva en
+                componentes web mediante experimentos moderados.
+              </p>
+            </div>
+
+            <nav className="public-footer-links" aria-label="Información pública">
+              <button type="button" onClick={() => setPublicPage("contact")}>
+                <span>Contacto</span>
+                <small>Soporte, colaboraciones y dirección de referencia</small>
+              </button>
+              <button type="button" onClick={() => setPublicPage("help")}>
+                <span>Ayuda</span>
+                <small>Rutas para usuarios, moderadores y desarrolladores</small>
+              </button>
+              <button type="button" onClick={() => setPublicPage("privacy")}>
+                <span>Privacidad</span>
+                <small>Datos tratados, finalidad y solicitudes</small>
+              </button>
+              <button type="button" onClick={() => setPublicPage("about")}>
+                <span>About us</span>
+                <small>Proyecto, método y compromiso académico</small>
+              </button>
+            </nav>
+          </div>
         </footer>
       </div>
     );

@@ -534,6 +534,47 @@ button:disabled {
   margin-bottom: var(--space-3);
 }
 
+.public-info-card {
+  text-align: left;
+}
+
+.public-info-card .login-tag,
+.public-info-card h1 {
+  text-align: center;
+}
+
+.public-info-intro {
+  color: var(--text-muted);
+  margin: 0 auto var(--space-6);
+  max-width: 720px;
+  text-align: center;
+  line-height: 1.65;
+}
+
+.public-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.public-info-item {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  background: var(--bg-subtle);
+}
+
+.public-info-item h2 {
+  margin-bottom: var(--space-2);
+  font-size: 18px;
+}
+
+.public-info-item p {
+  color: var(--text-muted);
+  line-height: 1.55;
+}
+
 .metric-block {
   margin-top: var(--space-2);
 }
@@ -1166,7 +1207,11 @@ button:disabled {
 }
 
 .public-app {
+  width: 100%;
+  max-width: none;
   min-height: 100vh;
+  margin: 0;
+  padding: 0;
   display: flex;
   flex-direction: column;
 }
@@ -1215,16 +1260,77 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 100%;
   padding: 2rem;
 }
 
 .public-footer {
-  padding: 1.25rem 2rem;
-  display: flex;
-  justify-content: center;
-  gap: 1.5rem;
+  padding: 0.75rem 3rem;
   border-top: 1px solid var(--border);
   background: var(--bg-surface);
+}
+
+.public-footer-inner {
+  width: 100%;
+  max-width: none;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(220px, auto) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.public-footer-summary {
+  color: var(--text-muted);
+}
+
+.public-footer-summary strong {
+  display: block;
+  color: var(--text-strong);
+  font-size: 14px;
+}
+
+.public-footer-summary p {
+  max-width: 320px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.public-footer-links {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.public-footer-links button {
+  display: flex;
+  min-height: auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem 0.5rem;
+  text-align: center;
+  white-space: normal;
+  border: none;
+  background: transparent;
+}
+
+.public-footer-links span {
+  color: var(--text-strong);
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.public-footer-links small {
+  display: none;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.public-footer-links button:hover {
+  border-color: var(--primary-border);
 }
 
 @media (max-width: 700px) {
@@ -1235,8 +1341,24 @@ button:disabled {
   }
 
   .public-footer {
-    flex-wrap: wrap;
-    gap: 0.75rem;
+    padding: var(--space-4);
+  }
+
+  .public-footer-inner,
+  .public-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .public-footer-inner {
+    gap: var(--space-3);
+  }
+
+  .public-footer-links {
+    justify-content: flex-start;
+  }
+
+  .public-footer-summary p {
+    max-width: none;
   }
 
   .login-card {
@@ -1553,4 +1675,3 @@ button:disabled {
   margin: 0;
   color: var(--text-main);
 }
-
