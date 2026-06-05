@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import {
   getExperiments,
   getPublishedExperiments,
@@ -24,6 +25,7 @@ import UserView from "./components/UserView";
 import AuthView from "./components/auth/AuthView";
 
 function App() {
+  const { i18n, t } = useTranslation();
   const [role, setRole] = useState("");
   const [currentUser, setCurrentUser] = useState(null);
   const [authFlow, setAuthFlow] = useState("");
@@ -36,12 +38,22 @@ function App() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
+  function changeLanguage(language) {
+    i18n.changeLanguage(language);
+    localStorage.setItem("language", language);
+    document.documentElement.lang = language;
+  }
+
+  useEffect(() => {
+    document.documentElement.lang = i18n.language;
+  }, [i18n.language]);
+
   async function loadExperiments() {
     try {
       const data = await getExperiments();
       setExperiments(data);
     } catch (err) {
-      setError("Error loading experiments");
+      setError(t("messages.loadingExperiments"));
       console.error(err);
     }
   }
@@ -51,7 +63,7 @@ function App() {
       const data = await getPublishedExperiments();
       setPublishedExperiments(data);
     } catch (err) {
-      setError("Error loading published experiments");
+      setError(t("messages.loadingPublishedExperiments"));
       console.error(err);
     }
   }
@@ -108,7 +120,7 @@ function App() {
       setPendingUsers(data);
     } catch (err) {
       console.error(err);
-      setError("Error loading pending users");
+      setError(t("messages.loadingPendingUsers"));
     }
   }
 
@@ -120,7 +132,7 @@ function App() {
       setEvaluatedExperimentIds(data);
     } catch (err) {
       console.error(err);
-      setError("Error loading evaluated experiments");
+      setError(t("messages.loadingEvaluatedExperiments"));
     }
   }
 
@@ -130,14 +142,14 @@ function App() {
 
       await createExperiment(payload);
 
-      setSuccessMessage("Experimento creado correctamente");
+      setSuccessMessage(t("messages.experimentCreated"));
       setError("");
 
       await loadExperiments();
       await loadPublishedExperiments();
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error creando experimento");
+      setError(err.message || t("messages.experimentCreateError"));
     }
   }
 
@@ -147,38 +159,38 @@ function App() {
       await updateExperimentStatus(id, status, moderationComment);
       setSuccessMessage(
         status === "approved"
-          ? "Experimento aprobado"
-          : "Experimento rechazado"
+          ? t("messages.experimentApproved")
+          : t("messages.experimentRejected")
       );
       await loadExperiments();
       await loadPublishedExperiments();
     } catch (err) {
       console.error(err);
-      setError("Error actualizando el estado");
+      setError(t("messages.statusUpdateError"));
     }
   }
 
   async function handleUpdateCategory(id, category) {
     try {
       await updateExperimentCategory(id, category);
-      setSuccessMessage("Categoría actualizada correctamente");
+      setSuccessMessage(t("messages.categoryUpdated"));
       await loadExperiments();
       await loadPublishedExperiments();
     } catch (err) {
       console.error(err);
-      setError("Error actualizando la categoría");
+      setError(t("messages.categoryUpdateError"));
     }
   }
 
   async function handleUpdateApprovedQuestions(id, approvedQuestions) {
     try {
       await updateApprovedQuestions(id, approvedQuestions);
-      setSuccessMessage("Preguntas aprobadas actualizadas correctamente");
+      setSuccessMessage(t("messages.approvedQuestionsUpdated"));
       await loadExperiments();
       await loadPublishedExperiments();
     } catch (err) {
       console.error(err);
-      setError("Error actualizando las preguntas aprobadas");
+      setError(t("messages.approvedQuestionsUpdateError"));
     }
   }
 
@@ -188,7 +200,7 @@ function App() {
 
       await createEvaluation(payload);
 
-      setSuccessMessage("Evaluación enviada correctamente");
+      setSuccessMessage(t("messages.evaluationSubmitted"));
 
       if (currentUser?.role === "user") {
         await loadEvaluatedExperimentIds(currentUser.id);
@@ -196,7 +208,7 @@ function App() {
       }
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error creando evaluación");
+      setError(err.message || t("messages.evaluationCreateError"));
     }
   }
 
@@ -206,7 +218,7 @@ function App() {
       setMyEvaluations(data);
     } catch (err) {
       console.error(err);
-      setError("Error loading evaluations");
+      setError(t("messages.loadingEvaluations"));
     }
   }
 
@@ -236,10 +248,10 @@ function App() {
       if (data.user.role === "moderator") {
         await loadPendingUsers();
       }
-      setSuccessMessage("Sesión iniciada correctamente");
+      setSuccessMessage(t("messages.loginSuccess"));
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error iniciando sesión");
+      setError(err.message || t("messages.loginError"));
     }
   }
 
@@ -251,7 +263,7 @@ function App() {
 
       if (data.role === "developer" && data.account_status === "pending") {
         setSuccessMessage(
-          "Cuenta creada correctamente. Queda pendiente de aprobación por un moderador."
+          t("messages.signupPending")
         );
         setAuthFlow("");
         return;
@@ -265,10 +277,10 @@ function App() {
       setCurrentUser(data);
       setRole(data.role);
       setAuthFlow("");
-      setSuccessMessage("Cuenta creada correctamente");
+      setSuccessMessage(t("messages.signupSuccess"));
     } catch (err) {
       console.error("SIGNUP ERROR:", err);
-      setError(err.message || "Error creando cuenta");
+      setError(err.message || t("messages.signupError"));
     }
   }
 
@@ -280,14 +292,14 @@ function App() {
 
       setSuccessMessage(
         accountStatus === "approved"
-          ? "Developer aprobado correctamente"
-          : "Developer rechazado correctamente"
+          ? t("messages.developerApproved")
+          : t("messages.developerRejected")
       );
 
       await loadPendingUsers();
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error actualizando usuario");
+      setError(err.message || t("messages.userUpdateError"));
     }
   }
 
@@ -297,12 +309,12 @@ function App() {
 
       await updateExperiment(id, payload);
 
-      setSuccessMessage("Experimento corregido y reenviado a moderación");
+      setSuccessMessage(t("messages.experimentResubmitted"));
 
       await loadExperiments();
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error actualizando experimento");
+      setError(err.message || t("messages.experimentUpdateError"));
     }
   }
 
@@ -312,12 +324,12 @@ function App() {
 
       await archiveExperiment(id);
 
-      setSuccessMessage("Experimento archivado correctamente");
+      setSuccessMessage(t("messages.experimentArchived"));
 
       await loadExperiments();
     } catch (err) {
       console.error(err);
-      setError(err.message || "Error archivando experimento");
+      setError(err.message || t("messages.experimentArchiveError"));
     }
   }
 
@@ -361,96 +373,12 @@ function App() {
     return null;
   }
   
-  // public pages
-  const publicPageDetails = {
-    help: {
-      title: "Ayuda",
-      intro:
-        "Encuentra el punto de entrada adecuado según tu rol y el tipo de tarea que quieres realizar en Accessibility Sandbox.",
-      sections: [
-        {
-          heading: "Usuarios evaluadores",
-          body: "Accede como usuario final para completar evaluaciones publicadas, comparar variantes A/B y enviar observaciones sobre claridad, comprensión y esfuerzo cognitivo.",
-        },
-        {
-          heading: "Moderadores",
-          body: "Revisa experimentos pendientes, valida que la evaluación sea comprensible y decide si cada propuesta está lista para publicarse.",
-        },
-        {
-          heading: "Desarrolladores",
-          body: "Crea experimentos, prepara variantes accesibles y consulta resultados para iterar sobre componentes web con evidencia estructurada.",
-        },
-      ],
-    },
-    contact: {
-      title: "Contacto",
-      intro:
-        "Si necesitas soporte, tienes una incidencia o quieres proponer una colaboración, escribe al equipo responsable del proyecto.",
-      sections: [
-        {
-          heading: "Soporte general",
-          body: "accessibility-sandbox@uc3m.example",
-        },
-        {
-          heading: "Atención académica",
-          body: "Para consultas sobre investigaciones, sesiones de evaluación o participación de estudiantes, indica tu nombre, rol y contexto de uso.",
-        },
-        {
-          heading: "Dirección de referencia",
-          body: "Campus de Leganés, Av. Universidad 30, 28911 Leganés, Madrid.",
-        },
-        {
-          heading: "Tiempo de respuesta",
-          body: "Las solicitudes se revisan en días laborables. Las incidencias que bloquean evaluaciones activas tienen prioridad.",
-        },
-      ],
-    },
-    privacy: {
-      title: "Privacidad",
-      intro:
-        "La plataforma limita la recogida de información a lo necesario para autenticar participantes, moderar experimentos y analizar evaluaciones.",
-      sections: [
-        {
-          heading: "Datos almacenados",
-          body: "Se guardan perfiles de acceso, experimentos creados, decisiones de moderación, respuestas de evaluación y comentarios asociados.",
-        },
-        {
-          heading: "Uso de la información",
-          body: "Los datos se utilizan para investigación, mejora de componentes y seguimiento del proceso de evaluación. No se venden ni se comparten con fines comerciales.",
-        },
-        {
-          heading: "Control y revisión",
-          body: "Puedes solicitar revisión, rectificación o eliminación de datos vinculados a tu cuenta contactando con el equipo del proyecto.",
-        },
-      ],
-    },
-    about: {
-      title: "About us",
-      intro:
-        "Accessibility Sandbox es un prototipo académico para estudiar cómo pequeñas decisiones de interfaz afectan a la accesibilidad cognitiva.",
-      sections: [
-        {
-          heading: "Propósito",
-          body: "Ayudar a equipos docentes, investigadores y desarrolladores a comparar componentes web de forma controlada y comprensible.",
-        },
-        {
-          heading: "Método",
-          body: "La plataforma combina roles diferenciados, moderación previa, comparaciones A/B y evaluaciones estructuradas para generar evidencia accionable.",
-        },
-        {
-          heading: "Compromiso",
-          body: "El proyecto prioriza claridad, trazabilidad y respeto por las personas que participan en las evaluaciones.",
-        },
-      ],
-    },
-  };
-
   function renderPublicInfoPage(pageKey) {
-    const page = publicPageDetails[pageKey];
+    const page = t(`public.pages.${pageKey}`, { returnObjects: true });
 
     return (
       <section className="card login-card public-info-card">
-        <p className="login-tag">Información pública</p>
+        <p className="login-tag">{t("public.infoLabel")}</p>
         <h1>{page.title}</h1>
         <p className="public-info-intro">{page.intro}</p>
 
@@ -464,7 +392,7 @@ function App() {
         </div>
 
         <button type="button" onClick={() => setPublicPage("home")}>
-          Volver
+          {t("common.back")}
         </button>
       </section>
     );
@@ -492,11 +420,10 @@ function App() {
       <section className="card login-card">
         <h1>Accessibility Sandbox</h1>
         <p className="login-tag">
-          Entorno de evaluación para desarrollador, moderador y usuario final
+          {t("public.home.tag")}
         </p>
         <p className="login-subtitle">
-          Prototipo para evaluar accesibilidad cognitiva en componentes web
-          mediante comparación A/B y evaluación estructurada.
+          {t("public.home.subtitle")}
         </p>
 
         <div className="role-cards">
@@ -505,8 +432,8 @@ function App() {
             className="role-card"
             onClick={() => setAuthFlow("developer")}
           >
-            <h2>Developer</h2>
-            <p>Crea experimentos y analiza resultados.</p>
+            <h2>{t("public.home.roles.developer.title")}</h2>
+            <p>{t("public.home.roles.developer.description")}</p>
           </button>
 
           <button
@@ -514,8 +441,8 @@ function App() {
             className="role-card"
             onClick={() => setAuthFlow("moderator")}
           >
-            <h2>Moderator</h2>
-            <p>Revisa experimentos y decide si se publican.</p>
+            <h2>{t("public.home.roles.moderator.title")}</h2>
+            <p>{t("public.home.roles.moderator.description")}</p>
           </button>
 
           <button
@@ -523,8 +450,8 @@ function App() {
             className="role-card"
             onClick={() => setAuthFlow("user")}
           >
-            <h2>User</h2>
-            <p>Evalúa componentes y aporta feedback.</p>
+            <h2>{t("public.home.roles.user.title")}</h2>
+            <p>{t("public.home.roles.user.description")}</p>
           </button>
         </div>
       </section>
@@ -547,8 +474,27 @@ function App() {
           </div>
 
           <nav className="public-nav">
-            <button onClick={() => setPublicPage("home")}>Inicio</button>
+            <button onClick={() => setPublicPage("home")}>
+              {t("public.nav.home")}
+            </button>
           </nav>
+
+          <div className="language-switcher" aria-label={t("common.language")}>
+            <button
+              type="button"
+              className={i18n.language === "es" ? "active-language" : ""}
+              onClick={() => changeLanguage("es")}
+            >
+              ES
+            </button>
+            <button
+              type="button"
+              className={i18n.language === "en" ? "active-language" : ""}
+              onClick={() => changeLanguage("en")}
+            >
+              EN
+            </button>
+          </div>
         </header>
 
         <main className="public-main">
@@ -573,27 +519,26 @@ function App() {
             <div className="public-footer-summary">
               <strong>Accessibility Sandbox</strong>
               <p>
-                Entorno académico para evaluar accesibilidad cognitiva en
-                componentes web mediante experimentos moderados.
+                {t("public.footer.summary")}
               </p>
             </div>
 
-            <nav className="public-footer-links" aria-label="Información pública">
+            <nav className="public-footer-links" aria-label={t("public.infoLabel")}>
               <button type="button" onClick={() => setPublicPage("contact")}>
-                <span>Contacto</span>
-                <small>Soporte, colaboraciones y dirección de referencia</small>
+                <span>{t("public.footer.links.contact.title")}</span>
+                <small>{t("public.footer.links.contact.description")}</small>
               </button>
               <button type="button" onClick={() => setPublicPage("help")}>
-                <span>Ayuda</span>
-                <small>Rutas para usuarios, moderadores y desarrolladores</small>
+                <span>{t("public.footer.links.help.title")}</span>
+                <small>{t("public.footer.links.help.description")}</small>
               </button>
               <button type="button" onClick={() => setPublicPage("privacy")}>
-                <span>Privacidad</span>
-                <small>Datos tratados, finalidad y solicitudes</small>
+                <span>{t("public.footer.links.privacy.title")}</span>
+                <small>{t("public.footer.links.privacy.description")}</small>
               </button>
               <button type="button" onClick={() => setPublicPage("about")}>
-                <span>About us</span>
-                <small>Proyecto, método y compromiso académico</small>
+                <span>{t("public.footer.links.about.title")}</span>
+                <small>{t("public.footer.links.about.description")}</small>
               </button>
             </nav>
           </div>
@@ -609,7 +554,7 @@ function App() {
         <h1>Accessibility Sandbox</h1>
         <div className="role-switcher">
           <span>
-            {currentUser?.name || "Usuario"} ·{" "}
+            {currentUser?.name || t("app.userFallback")} ·{" "}
             <strong>{currentUser?.role || role}</strong>
           </span>
           <button
@@ -620,10 +565,10 @@ function App() {
               setCurrentUser(null);
               setRole("");
               setAuthFlow("");
-              setSuccessMessage("Sesión cerrada correctamente");
+              setSuccessMessage(t("messages.logoutSuccess"));
             }}
           >
-            Cerrar sesión
+            {t("app.logout")}
           </button>
         </div>
       </header>
@@ -641,22 +586,22 @@ function App() {
 
       {role === "developer" && (
         <section className="card role-banner developer-banner">
-          <h2>Panel de desarrollador</h2>
-          <p>Crea experimentos y analiza resultados.</p>
+          <h2>{t("app.banners.developer.title")}</h2>
+          <p>{t("app.banners.developer.body")}</p>
         </section>
       )}
 
       {role === "moderator" && (
         <section className="card role-banner moderator-banner">
-          <h2>Panel de moderación</h2>
-          <p>Revisa experimentos pendientes.</p>
+          <h2>{t("app.banners.moderator.title")}</h2>
+          <p>{t("app.banners.moderator.body")}</p>
         </section>
       )}
 
       {role === "user" && (
         <section className="card role-banner user-banner">
-          <h2>Área de evaluación</h2>
-          <p>Evalúa componentes publicados.</p>
+          <h2>{t("app.banners.user.title")}</h2>
+          <p>{t("app.banners.user.body")}</p>
         </section>
       )}
 

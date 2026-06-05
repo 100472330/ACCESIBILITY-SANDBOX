@@ -1222,6 +1222,7 @@ button:disabled {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: var(--space-4);
   border-bottom: 1px solid var(--border);
   background: var(--bg-surface);
 }
@@ -1236,10 +1237,12 @@ button:disabled {
 .public-nav {
   display: flex;
   gap: 0.75rem;
+  margin-left: auto;
 }
 
 .public-nav button,
-.public-footer button {
+.public-footer button,
+.language-switcher button {
   background: transparent;
   color: #111827;
   border: none;
@@ -1250,9 +1253,32 @@ button:disabled {
 }
 
 .public-nav button:hover,
-.public-footer button:hover {
+.public-footer button:hover,
+.language-switcher button:hover {
   color: var(--primary);
   background: rgba(37, 99, 235, 0.08);
+}
+
+.language-switcher {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+}
+
+.language-switcher button {
+  min-width: 40px;
+  padding: 0.35rem 0.55rem;
+  font-size: 13px;
+}
+
+.language-switcher .active-language {
+  color: var(--text-strong);
+  background: var(--bg-surface);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
 }
 
 .public-main {
@@ -1338,6 +1364,10 @@ button:disabled {
     padding: 1rem;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .public-nav {
+    margin-left: 0;
   }
 
   .public-footer {

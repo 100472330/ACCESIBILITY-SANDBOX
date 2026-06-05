@@ -1,4 +1,5 @@
 import { buildPreviewHtml } from "../utils/previewHtml";
+import { useTranslation } from "react-i18next";
 
 function ExperimentPreview({
   experiment,
@@ -6,6 +7,8 @@ function ExperimentPreview({
   variantClassName = "",
   fullWidth = false,
 }) {
+  const { t } = useTranslation();
+
   if (!experiment) return null;
 
   if (experiment.type === "single") {
@@ -27,7 +30,7 @@ function ExperimentPreview({
             selectedVariant === "A" ? "selected" : ""
           }`}
         >
-          <h4>Variante A</h4>
+          <h4>{t("common.variantA")}</h4>
           <iframe
             title={`preview-a-${experiment.id}`}
             className="preview-frame"
@@ -41,7 +44,7 @@ function ExperimentPreview({
             selectedVariant === "B" ? "selected" : ""
           }`}
         >
-          <h4>Variante B</h4>
+          <h4>{t("common.variantB")}</h4>
           <iframe
             title={`preview-b-${experiment.id}`}
             className="preview-frame"

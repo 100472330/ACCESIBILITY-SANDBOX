@@ -1,15 +1,17 @@
 import { useEffect, useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 function ConfirmModal({
   title,
   message,
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
+  confirmLabel,
+  cancelLabel,
   confirmClassName = "",
   onConfirm,
   onCancel,
   children,
 }) {
+  const { t } = useTranslation();
   const cancelButtonRef = useRef(null);
 
   useEffect(() => {
@@ -36,7 +38,7 @@ function ConfirmModal({
             onClick={onCancel}
             ref={cancelButtonRef}
           >
-            {cancelLabel}
+            {cancelLabel || t("common.cancel")}
           </button>
 
           <button
@@ -44,7 +46,7 @@ function ConfirmModal({
             className={confirmClassName}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {confirmLabel || t("common.confirm")}
           </button>
         </div>
       </div>

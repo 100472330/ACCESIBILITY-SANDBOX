@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 function AuthView({
   role,
@@ -7,6 +8,7 @@ function AuthView({
   onLogin,
   onSignup,
 }) {
+  const { t } = useTranslation();
   const [mode, setMode] = useState("login");
   const [form, setForm] = useState({
     name: "",
@@ -15,6 +17,7 @@ function AuthView({
   });
 
   const isSignup = mode === "signup";
+  const roleLabel = t(`common.roles.${role}`);
 
   function handleChange(event) {
     const { name, value } = event.target;
@@ -45,18 +48,18 @@ function AuthView({
 
   return (
     <section className="card login-card">
-      <h1>Acceso {role}</h1>
+      <h1>{t("auth.accessTitle", { role: roleLabel })}</h1>
 
       <p className="login-subtitle">
         {role === "moderator"
-          ? "Acceso reservado a moderadores autorizados."
-          : "Inicia sesión o crea una cuenta para acceder a la plataforma."}
+          ? t("auth.moderatorSubtitle")
+          : t("auth.defaultSubtitle")}
       </p>
 
       <form onSubmit={handleSubmit} className="form auth-form">
         {isSignup && (
           <>
-            <label htmlFor={`${role}-name`}>Nombre</label>
+            <label htmlFor={`${role}-name`}>{t("auth.name")}</label>
             <input
               id={`${role}-name`}
               name="name"
@@ -67,7 +70,7 @@ function AuthView({
           </>
         )}
 
-        <label htmlFor={`${role}-email`}>Email</label>
+        <label htmlFor={`${role}-email`}>{t("auth.email")}</label>
         <input
           id={`${role}-email`}
           name="email"
@@ -77,7 +80,7 @@ function AuthView({
           required
         />
 
-        <label htmlFor={`${role}-password`}>Contraseña</label>
+        <label htmlFor={`${role}-password`}>{t("auth.password")}</label>
         <input
           id={`${role}-password`}
           name="password"
@@ -89,7 +92,7 @@ function AuthView({
         />
 
         <button type="submit">
-          {isSignup ? "Crear cuenta" : "Iniciar sesión"}
+          {isSignup ? t("auth.createAccount") : t("auth.login")}
         </button>
       </form>
 
@@ -100,8 +103,8 @@ function AuthView({
           onClick={() => setMode(isSignup ? "login" : "signup")}
         >
           {isSignup
-            ? "Ya tengo cuenta"
-            : `Crear cuenta como ${role}`}
+            ? t("auth.alreadyHaveAccount")
+            : t("auth.createAccountAs", { role: roleLabel })}
         </button>
       )}
 
@@ -110,7 +113,7 @@ function AuthView({
         className="public-back-button"
         onClick={onBack}
       >
-        Volver
+        {t("common.back")}
       </button>
     </section>
   );

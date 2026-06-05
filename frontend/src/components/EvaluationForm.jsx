@@ -1,14 +1,16 @@
+import { useTranslation } from "react-i18next";
+
 const standardQuestions = [
-  { id: "q1", text: "El propósito del componente se entiende rápidamente." },
-  { id: "q2", text: "La información principal está organizada de forma clara." },
-  { id: "q3", text: "Los textos e instrucciones son fáciles de comprender." },
-  { id: "q4", text: "Sé qué acción debo realizar sin necesitar ayuda externa." },
-  { id: "q5", text: "Los elementos importantes son fáciles de identificar visualmente." },
-  { id: "q6", text: "El componente evita mostrar demasiada información al mismo tiempo." },
-  { id: "q7", text: "El orden de los elementos facilita completar la tarea." },
-  { id: "q8", text: "Los nombres de botones, campos o enlaces son claros." },
-  { id: "q9", text: "El componente reduce la posibilidad de cometer errores." },
-  { id: "q10", text: "La experiencia general resulta sencilla y poco demandante." },
+  { id: "q1" },
+  { id: "q2" },
+  { id: "q3" },
+  { id: "q4" },
+  { id: "q5" },
+  { id: "q6" },
+  { id: "q7" },
+  { id: "q8" },
+  { id: "q9" },
+  { id: "q10" },
 ];
 
 function EvaluationForm({
@@ -21,22 +23,23 @@ function EvaluationForm({
   onStandardAnswerChange,
   onCustomAnswersChange,
 }) {
+  const { t } = useTranslation();
+
   return (
     <section className="card">
-      <h3>Evaluar experimento</h3>
+      <h3>{t("evaluation.form.title")}</h3>
 
       <form onSubmit={onSubmit} className="form">
         <div className="standard-questions-block">
-          <h3>Evaluación estándar</h3>
+          <h3>{t("evaluation.form.standardTitle")}</h3>
           <p className="evaluation-help">
-            Valora cada afirmación del 1 al 5, donde 1 significa “muy en desacuerdo”
-            y 5 significa “muy de acuerdo”.
+            {t("evaluation.form.help")}
           </p>
 
           {experiment.type === "ab" && (
             <div className="standard-question-card">
               <p className="standard-question-text">
-                ¿Qué variante prefieres?
+                {t("evaluation.form.preferredVariant")}
               </p>
 
               <div className="ab-choice-inline">
@@ -48,7 +51,7 @@ function EvaluationForm({
                     checked={form.preferred_variant === "A"}
                     onChange={onChange}
                   />
-                  <span>Variante A</span>
+                  <span>{t("common.variantA")}</span>
                 </label>
 
                 <label className="likert-option">
@@ -59,7 +62,7 @@ function EvaluationForm({
                     checked={form.preferred_variant === "B"}
                     onChange={onChange}
                   />
-                  <span>Variante B</span>
+                  <span>{t("common.variantB")}</span>
                 </label>
               </div>
             </div>
@@ -67,10 +70,14 @@ function EvaluationForm({
 
           {standardQuestions.map((question) => (
             <div key={question.id} className="standard-question-card">
-              <p className="standard-question-text">{question.text}</p>
+              <p className="standard-question-text">
+                {t(`evaluation.standardQuestions.${question.id}`)}
+              </p>
 
               <div className="likert-row">
-                <span className="likert-end-label">Muy en desacuerdo</span>
+                <span className="likert-end-label">
+                  {t("evaluation.form.stronglyDisagree")}
+                </span>
 
                 <div className="likert-scale">
                   {[1, 2, 3, 4, 5].map((value) => (
@@ -89,7 +96,9 @@ function EvaluationForm({
                   ))}
                 </div>
 
-                <span className="likert-end-label">Muy de acuerdo</span>
+                <span className="likert-end-label">
+                  {t("evaluation.form.stronglyAgree")}
+                </span>
               </div>
             </div>
           ))}
@@ -97,20 +106,20 @@ function EvaluationForm({
 
         <textarea
           name="comment"
-          placeholder="Comentario opcional"
+          placeholder={t("evaluation.form.optionalComment")}
           value={form.comment}
           onChange={onChange}
         />
 
         {customQuestions.length > 0 && (
           <div className="custom-answers-block">
-            <h3>Preguntas específicas del experimento</h3>
+            <h3>{t("evaluation.form.customTitle")}</h3>
 
             {customQuestions.map((question, index) => (
               <label key={index}>
                 {question}
                 <textarea
-                  placeholder="Escribe tu respuesta..."
+                  placeholder={t("evaluation.form.customPlaceholder")}
                   value={customAnswers[question] || ""}
                   onChange={(event) =>
                     onCustomAnswersChange(question, event.target.value)
@@ -121,7 +130,7 @@ function EvaluationForm({
           </div>
         )}
 
-        <button type="submit">Enviar evaluación</button>
+        <button type="submit">{t("evaluation.form.submit")}</button>
       </form>
     </section>
   );

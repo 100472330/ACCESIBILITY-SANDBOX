@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { buildPreviewHtml } from "../utils/previewHtml";
 import ConfirmModal from "./ConfirmModal";
 
@@ -15,18 +16,19 @@ function ModeratorView({
   const [approvedQuestionsByExperiment, setApprovedQuestionsByExperiment] = useState({});
   const [confirmAction, setConfirmAction] = useState(null);
   const [rejectionComment, setRejectionComment] = useState("");
+  const { t } = useTranslation();
 
   const pendingExperiments = experiments.filter(
     (experiment) => experiment.status === "pending"
   );
 
   const categories = [
-    { value: "form", label: "Formularios" },
-    { value: "login", label: "Pantallas de acceso" },
-    { value: "text", label: "Contenido textual" },
-    { value: "button", label: "Botones / CTA" },
-    { value: "navigation", label: "Navegación" },
-    { value: "other", label: "Otros" },
+    { value: "form", label: t("common.categories.form") },
+    { value: "login", label: t("common.categories.login") },
+    { value: "text", label: t("common.categories.text") },
+    { value: "button", label: t("common.categories.button") },
+    { value: "navigation", label: t("common.categories.navigation") },
+    { value: "other", label: t("common.categories.other") },
   ];
 
   const filteredPendingExperiments = selectedCategory
@@ -93,16 +95,16 @@ function ModeratorView({
   return (
     <>
       <section className="card">
-        <h2>Solicitudes de Developer</h2>
+        <h2>{t("moderatorView.developerRequestsTitle")}</h2>
         <p className="category-intro">
-          Revisa las cuentas de desarrollador que están pendientes de aprobación.
+          {t("moderatorView.developerRequestsBody")}
         </p>
 
         {pendingUsers.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">✓</div>
-            <h3>No hay solicitudes pendientes</h3>
-            <p>Actualmente no hay nuevas cuentas de desarrollador esperando revisión.</p>
+            <h3>{t("moderatorView.noRequestsTitle")}</h3>
+            <p>{t("moderatorView.noRequestsBody")}</p>
           </div>
         ) : (
           <div className="experiment-list">
@@ -120,7 +122,8 @@ function ModeratorView({
                 </div>
 
                 <p>
-                  <strong>Rol solicitado:</strong> {user.role}
+                  <strong>{t("moderatorView.requestedRole")}:</strong>{" "}
+                  {t(`common.roles.${user.role}`)}
                 </p>
 
                 <div className="actions">
@@ -128,14 +131,14 @@ function ModeratorView({
                     className="approve-btn"
                     onClick={() => onUpdateUserStatus(user.id, "approved")}
                   >
-                    Aprobar developer
+                    {t("moderatorView.approveDeveloper")}
                   </button>
 
                   <button
                     className="reject-btn"
                     onClick={() => onUpdateUserStatus(user.id, "rejected")}
                   >
-                    Rechazar developer
+                    {t("moderatorView.rejectDeveloper")}
                   </button>
                 </div>
               </div>
@@ -145,9 +148,9 @@ function ModeratorView({
       </section>
 
       <section className="card">
-        <h2>Moderación</h2>
+        <h2>{t("moderatorView.moderationTitle")}</h2>
         <p className="category-intro">
-          Selecciona una categoría para revisar los experimentos pendientes.
+          {t("moderatorView.moderationBody")}
         </p>
 
         <div className="category-card-grid">
@@ -170,17 +173,17 @@ function ModeratorView({
         {selectedCategory === "" ? (
           <div className="empty-state">
             <div className="empty-state-icon">🛡</div>
-            <h3>Selecciona una categoría</h3>
+            <h3>{t("moderatorView.selectCategoryTitle")}</h3>
             <p>
-              Elige una categoría para revisar los experimentos pendientes de moderación.
+              {t("moderatorView.selectCategoryBody")}
             </p>
           </div>
         ) : filteredPendingExperiments.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">✓</div>
-            <h3>No hay experimentos pendientes</h3>
+            <h3>{t("moderatorView.noPendingTitle")}</h3>
             <p>
-              Actualmente no existen experimentos pendientes de revisión en esta categoría.
+              {t("moderatorView.noPendingBody")}
             </p>
           </div>
         ) : (
@@ -201,26 +204,27 @@ function ModeratorView({
                   <h3>{experiment.title}</h3>
 
                   <p className="experiment-short-description">
-                    {experiment.short_description || "Sin descripción breve"}
+                    {experiment.short_description || t("common.noShortDescription")}
                   </p>
 
                   <p className="experiment-long-description">
-                    {experiment.description || "Sin descripción detallada"}
+                    {experiment.description || t("common.noDetailedDescription")}
                   </p>
 
                   {experiment.instructions && (
                     <div className="experiment-instructions">
-                      <h4>Instrucciones</h4>
+                      <h4>{t("common.instructions")}</h4>
                       <p>{experiment.instructions}</p>
                     </div>
                   )}
 
                   <p>
-                    <strong>Tipo:</strong> {experiment.type}
+                    <strong>{t("common.type")}:</strong>{" "}
+                    {t(`common.experimentTypes.${experiment.type}`)}
                   </p>
 
                   <label className="moderator-category-select">
-                    <strong>Categoría:</strong>
+                    <strong>{t("common.category")}:</strong>
                     <select
                       value={experiment.category || "other"}
                       onChange={(e) =>
@@ -238,7 +242,7 @@ function ModeratorView({
                   {customQuestions.length > 0 && (
                     <div className="moderator-questions-box">
                       <p>
-                        <strong>Preguntas personalizadas propuestas:</strong>
+                        <strong>{t("moderatorView.proposedQuestions")}:</strong>
                       </p>
 
                       {customQuestions.map((question, index) => {
@@ -264,21 +268,22 @@ function ModeratorView({
                   )}
 
                   <p>
-                    <strong>Estado:</strong> {experiment.status}
+                    <strong>{t("common.status")}:</strong>{" "}
+                    {t(`common.statuses.${experiment.status}`)}
                   </p>
 
                   <button onClick={() => togglePreview(experiment.id)}>
                     {openPreview[experiment.id]
-                      ? "Ocultar vista previa"
-                      : "Ver vista previa"}
+                      ? t("moderatorView.hidePreview")
+                      : t("moderatorView.showPreview")}
                   </button>
 
                   {openPreview[experiment.id] && (
                     <div className="moderator-preview-box">
                       <p className="preview-label">
                         {experiment.type === "ab"
-                          ? "Comparación de variantes"
-                          : "Vista previa del componente"}
+                          ? t("moderatorView.variantsComparison")
+                          : t("moderatorView.componentPreview")}
                       </p>
 
                       {experiment.type === "single" && (
@@ -295,7 +300,7 @@ function ModeratorView({
                       {experiment.type === "ab" && (
                         <div className="ab-container">
                           <div className="ab-variant">
-                            <h4>Variante A</h4>
+                            <h4>{t("common.variantA")}</h4>
                             <iframe
                               title={`preview-a-${experiment.id}`}
                               className="preview-frame"
@@ -307,7 +312,7 @@ function ModeratorView({
                           </div>
 
                           <div className="ab-variant">
-                            <h4>Variante B</h4>
+                            <h4>{t("common.variantB")}</h4>
                             <iframe
                               title={`preview-b-${experiment.id}`}
                               className="preview-frame"
@@ -327,14 +332,14 @@ function ModeratorView({
                       className="approve-btn"
                       onClick={() => requestStatusChange(experiment, "approved")}
                     >
-                      Aprobar
+                      {t("moderatorView.approve")}
                     </button>
 
                    <button
                     className="reject-btn"
                     onClick={() => requestStatusChange(experiment, "rejected")}
                   >
-                    Rechazar
+                    {t("moderatorView.reject")}
                   </button>
                   </div>
                 </div>
@@ -347,18 +352,22 @@ function ModeratorView({
         <ConfirmModal
           title={
             confirmAction.status === "approved"
-              ? "Confirmar aprobación"
-              : "Confirmar rechazo"
+              ? t("moderatorView.confirmApproveTitle")
+              : t("moderatorView.confirmRejectTitle")
           }
           message={
             confirmAction.status === "approved"
-              ? `El experimento "${confirmAction.experiment.title}" será publicado y visible para los usuarios.`
-              : `El experimento "${confirmAction.experiment.title}" será rechazado y no estará disponible para evaluación.`
+              ? t("moderatorView.confirmApproveMessage", {
+                  title: confirmAction.experiment.title,
+                })
+              : t("moderatorView.confirmRejectMessage", {
+                  title: confirmAction.experiment.title,
+                })
           }
           confirmLabel={
             confirmAction.status === "approved"
-              ? "Aprobar experimento"
-              : "Rechazar experimento"
+              ? t("moderatorView.approveExperiment")
+              : t("moderatorView.rejectExperiment")
           }
           confirmClassName={
             confirmAction.status === "approved"
@@ -370,9 +379,9 @@ function ModeratorView({
         >
           {confirmAction.status === "rejected" && (
             <label>
-              <span>Motivo del rechazo</span>
+              <span>{t("moderatorView.rejectionReason")}</span>
               <textarea
-                placeholder="Explica brevemente por qué se rechaza el experimento..."
+                placeholder={t("moderatorView.rejectionPlaceholder")}
                 value={rejectionComment}
                 onChange={(e) => setRejectionComment(e.target.value)}
               />

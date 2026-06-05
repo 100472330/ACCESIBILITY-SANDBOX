@@ -1,20 +1,8 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import ExperimentPreview from "./ExperimentPreview";
 import EvaluationForm from "./EvaluationForm";
 import ConfirmModal from "./ConfirmModal";
-
-const standardQuestions = [
-  { id: "q1", text: "El propósito del componente se entiende rápidamente." },
-  { id: "q2", text: "La información principal está organizada de forma clara." },
-  { id: "q3", text: "Los textos e instrucciones son fáciles de comprender." },
-  { id: "q4", text: "Sé qué acción debo realizar sin necesitar ayuda externa." },
-  { id: "q5", text: "Los elementos importantes son fáciles de identificar visualmente." },
-  { id: "q6", text: "El componente evita mostrar demasiada información al mismo tiempo." },
-  { id: "q7", text: "El orden de los elementos facilita completar la tarea." },
-  { id: "q8", text: "Los nombres de botones, campos o enlaces son claros." },
-  { id: "q9", text: "El componente reduce la posibilidad de cometer errores." },
-  { id: "q10", text: "La experiencia general resulta sencilla y poco demandante." },
-];
 
 const initialForm = {
   standard_answers: {
@@ -51,6 +39,7 @@ function UserView({
   evaluatedExperimentIds = [],
   myEvaluations = [],
 }) {
+  const { t } = useTranslation();
   const [selectedExperimentId, setSelectedExperimentId] = useState(null);
   const [selectedCategory, setSelectedCategory] = useState("");
   const [customAnswers, setCustomAnswers] = useState({});
@@ -66,12 +55,12 @@ function UserView({
     : [];
 
   const categories = [
-    { value: "form", label: "Formularios" },
-    { value: "login", label: "Formularios de Login" },
-    { value: "text", label: "Textos" },
-    { value: "button", label: "Botones / CTA" },
-    { value: "navigation", label: "Barras de Navegación" },
-    { value: "other", label: "Otros" },
+    { value: "form", label: t("common.categories.form") },
+    { value: "login", label: t("common.categories.login") },
+    { value: "text", label: t("common.categories.text") },
+    { value: "button", label: t("common.categories.button") },
+    { value: "navigation", label: t("common.categories.navigation") },
+    { value: "other", label: t("common.categories.other") },
   ];
 
   const filteredExperiments = selectedCategory
@@ -128,7 +117,7 @@ function UserView({
     if (!selectedExperiment) return;
 
     if (selectedExperiment.type === "ab" && !form.preferred_variant) {
-      alert("Debes seleccionar qué variante prefieres antes de enviar la evaluación.");
+      alert(t("userView.missingVariantAlert"));
       return;
     }
 
@@ -180,25 +169,28 @@ function UserView({
             <div>
               <h2>{selectedExperiment.title}</h2>
               <p className="experiment-long-description">
-                {selectedExperiment.description || "Sin descripción detallada"}
+                {selectedExperiment.description || t("common.noDetailedDescription")}
               </p>
 
               {selectedExperiment.instructions && (
                 <div className="experiment-instructions">
-                  <h3>Instrucciones</h3>
+                  <h3>{t("common.instructions")}</h3>
                   <p>{selectedExperiment.instructions}</p>
                 </div>
               )}
 
               <p>
-                <strong>Tipo:</strong> {selectedExperiment.type} ·{" "}
-                <strong>Categoría:</strong>{" "}
-                {selectedExperiment.category || "Sin categoría"}
+                <strong>{t("common.type")}:</strong>{" "}
+                {t(`common.experimentTypes.${selectedExperiment.type}`)} ·{" "}
+                <strong>{t("common.category")}:</strong>{" "}
+                {selectedExperiment.category
+                  ? t(`common.categories.${selectedExperiment.category}`)
+                  : t("common.noCategory")}
               </p>
             </div>
 
             <button onClick={closeExperiment}>
-              Volver a experimentos
+              {t("userView.backToExperiments")}
             </button>
           </div>
         </section>
@@ -206,8 +198,8 @@ function UserView({
         <section className="card">
           <h3>
             {selectedExperiment.type === "ab"
-              ? "Componentes a comparar"
-              : "Componente a evaluar"}
+              ? t("userView.compareComponents")
+              : t("userView.evaluateComponent")}
           </h3>
 
           <ExperimentPreview
@@ -236,9 +228,9 @@ function UserView({
 
         {showConfirmSubmit && (
           <ConfirmModal
-            title="Confirmar envío"
-            message="Vas a enviar tu evaluación. Una vez enviada, el experimento quedará marcado como evaluado en esta sesión."
-            confirmLabel="Confirmar envío"
+            title={t("userView.confirmSubmitTitle")}
+            message={t("userView.confirmSubmitMessage")}
+            confirmLabel={t("userView.confirmSubmitLabel")}
             onCancel={() => setShowConfirmSubmit(false)}
             onConfirm={confirmSubmitEvaluation}
           />
@@ -250,16 +242,16 @@ function UserView({
   return (
     <>
       <section className="card">
-        <h2>Mis evaluaciones</h2>
+        <h2>{t("userView.myEvaluations")}</h2>
 
         {myEvaluations.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">📝</div>
 
-            <h3>Todavía no has evaluado experimentos</h3>
+            <h3>{t("userView.noEvaluationsTitle")}</h3>
 
             <p>
-              Cuando completes evaluaciones aparecerán aquí.
+              {t("userView.noEvaluationsBody")}
             </p>
           </div>
         ) : (
@@ -274,38 +266,41 @@ function UserView({
                     <h3>{evaluation.experiment_title}</h3>
 
                     <p>
-                      Categoría: {evaluation.category}
+                      {t("common.category")}:{" "}
+                      {evaluation.category
+                        ? t(`common.categories.${evaluation.category}`)
+                        : t("common.noCategory")}
                     </p>
                   </div>
 
                   <span className="status-badge status-approved">
-                    Evaluado
+                    {t("common.evaluated")}
                   </span>
                 </div>
 
                 <p>
-                  <strong>Tipo:</strong>{" "}
+                  <strong>{t("common.type")}:</strong>{" "}
                   {evaluation.experiment_type === "ab"
-                    ? "Comparación A/B"
-                    : "Componente único"}
+                    ? t("common.experimentTypes.ab")
+                    : t("common.experimentTypes.single")}
                 </p>
 
                 {evaluation.preferred_variant && (
                   <p>
-                    <strong>Variante preferida:</strong>{" "}
+                    <strong>{t("userView.preferredVariant")}:</strong>{" "}
                     {evaluation.preferred_variant}
                   </p>
                 )}
 
                 {evaluation.comment && (
                   <p>
-                    <strong>Comentario:</strong>{" "}
+                    <strong>{t("common.comment")}:</strong>{" "}
                     {evaluation.comment}
                   </p>
                 )}
 
                 <p>
-                  <strong>Fecha:</strong>{" "}
+                  <strong>{t("common.date")}:</strong>{" "}
                   {new Date(
                     evaluation.created_at
                   ).toLocaleString()}
@@ -317,9 +312,9 @@ function UserView({
       </section>
 
       <section className="card">
-        <h2>Elige qué quieres evaluar</h2>
+        <h2>{t("userView.chooseTitle")}</h2>
         <p className="category-intro">
-          Selecciona una categoría para ver los experimentos publicados.
+          {t("userView.chooseBody")}
         </p>
 
         <div className="category-card-grid">
@@ -345,17 +340,17 @@ function UserView({
         {selectedCategory === "" ? (
           <div className="empty-state">
             <div className="empty-state-icon">⌕</div>
-            <h3>Selecciona una categoría</h3>
+            <h3>{t("userView.selectCategoryTitle")}</h3>
             <p>
-              Elige una categoría para ver los experimentos disponibles y comenzar una evaluación.
+              {t("userView.selectCategoryBody")}
             </p>
           </div>
         ) : filteredExperiments.length === 0 ? (
           <div className="empty-state">
             <div className="empty-state-icon">∅</div>
-            <h3>No hay experimentos publicados</h3>
+            <h3>{t("userView.noPublishedTitle")}</h3>
             <p>
-              Todavía no hay experimentos disponibles en esta categoría. Prueba con otra categoría o vuelve más tarde.
+              {t("userView.noPublishedBody")}
             </p>
           </div>
         ) : (
@@ -385,21 +380,26 @@ function UserView({
                   <div className="experiment-card-header">
                     <div>
                       <h3>{experiment.title}</h3>
-                      <p>{experiment.short_description || "Sin descripción"}</p>
+                      <p>{experiment.short_description || t("common.noDescription")}</p>
                     </div>
 
                     {alreadyEvaluated && (
                       <span className="status-badge status-approved">
-                        Evaluado
+                        {t("common.evaluated")}
                       </span>
                     )}
                   </div>
 
                   <div className="experiment-card-meta">
-                    <p><strong>Tipo:</strong> {experiment.type}</p>
                     <p>
-                      <strong>Categoría:</strong>{" "}
-                      {experiment.category || "Sin categoría"}
+                      <strong>{t("common.type")}:</strong>{" "}
+                      {t(`common.experimentTypes.${experiment.type}`)}
+                    </p>
+                    <p>
+                      <strong>{t("common.category")}:</strong>{" "}
+                      {experiment.category
+                        ? t(`common.categories.${experiment.category}`)
+                        : t("common.noCategory")}
                     </p>
                   </div>
 
@@ -415,8 +415,8 @@ function UserView({
                     }}
                   >
                     {alreadyEvaluated
-                      ? "Evaluación enviada"
-                      : "Evaluar experimento"}
+                      ? t("userView.evaluationSent")
+                      : t("userView.evaluateExperiment")}
                   </button>
                 </div>
               );

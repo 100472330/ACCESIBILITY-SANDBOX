@@ -1,19 +1,20 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { getExperimentResults } from "../api";
 import { buildPreviewHtml } from "../utils/previewHtml";
 import ConfirmModal from "./ConfirmModal";
 
 const standardQuestions = [
-  { id: "q1", text: "El propósito del componente se entiende rápidamente." },
-  { id: "q2", text: "La información principal está organizada de forma clara." },
-  { id: "q3", text: "Los textos e instrucciones son fáciles de comprender." },
-  { id: "q4", text: "Sé qué acción debo realizar sin necesitar ayuda externa." },
-  { id: "q5", text: "Los elementos importantes son fáciles de identificar visualmente." },
-  { id: "q6", text: "El componente evita mostrar demasiada información al mismo tiempo." },
-  { id: "q7", text: "El orden de los elementos facilita completar la tarea." },
-  { id: "q8", text: "Los nombres de botones, campos o enlaces son claros." },
-  { id: "q9", text: "El componente reduce la posibilidad de cometer errores." },
-  { id: "q10", text: "La experiencia general resulta sencilla y poco demandante." },
+  { id: "q1" },
+  { id: "q2" },
+  { id: "q3" },
+  { id: "q4" },
+  { id: "q5" },
+  { id: "q6" },
+  { id: "q7" },
+  { id: "q8" },
+  { id: "q9" },
+  { id: "q10" },
 ];
 
 function safeParseArray(value) {
@@ -47,6 +48,7 @@ function escapeCSV(value) {
 }
 
 function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment, onArchiveExperiment,}) {
+  const { t } = useTranslation();
   const [results, setResults] = useState({});
   const [form, setForm] = useState({
     title: "",
@@ -175,14 +177,19 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       if (!worstQuestion || worstValue === null || worstValue === undefined) return null;
 
       if (worstValue < 3) {
-        return `Revisar prioritariamente este aspecto: "${worstQuestion.text}". La puntuación es baja (${worstValue.toFixed(2)} / 5), por lo que puede estar afectando a la comprensión del componente.`;
+        return t("developerView.recommendation.priority", {
+          question: t(`evaluation.standardQuestions.${worstQuestion.id}`),
+          score: worstValue.toFixed(2),
+        });
       }
 
       if (globalAverage !== null && globalAverage >= 4) {
-        return "El componente presenta una valoración global alta. Se recomienda mantener el diseño actual y revisar únicamente comentarios cualitativos.";
+        return t("developerView.recommendation.highScore");
       }
 
-      return `El componente tiene margen de mejora. El primer aspecto a revisar debería ser: "${worstQuestion.text}".`;
+      return t("developerView.recommendation.improve", {
+        question: t(`evaluation.standardQuestions.${worstQuestion.id}`),
+      });
     }
 
     const bestQuestion =
@@ -195,13 +202,13 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
     if (countA > 0 || countB > 0) {
       if (countA > countB) {
         recommendedVariant = "A";
-        recommendationReason = "ha recibido más preferencias por parte de los usuarios.";
+        recommendationReason = t("developerView.recommendation.morePreferences");
       } else if (countB > countA) {
         recommendedVariant = "B";
-        recommendationReason = "ha recibido más preferencias por parte de los usuarios.";
+        recommendationReason = t("developerView.recommendation.morePreferences");
       } else {
-        recommendedVariant = "Empate";
-        recommendationReason = "ambas variantes han recibido el mismo número de preferencias.";
+        recommendedVariant = t("common.tie");
+        recommendationReason = t("developerView.recommendation.equalPreferences");
       }
     }
 
@@ -238,7 +245,9 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       "id",
       "preferred_variant",
       "comment",
-      ...standardQuestions.map((question) => `${question.id}: ${question.text}`),
+      ...standardQuestions.map((question) =>
+        `${question.id}: ${t(`evaluation.standardQuestions.${question.id}`)}`
+      ),
       ...customQuestionList.map((question, index) => `custom_${index + 1}: ${question}`),
     ];
 
@@ -388,35 +397,35 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
     setValidationError("");
 
     if (!form.title.trim()) {
-      setValidationError("El título del experimento es obligatorio.");
+      setValidationError(t("developerView.validation.titleRequired"));
       return;
     }
 
     if (!form.description.trim()) {
-      setValidationError("La descripción del experimento es obligatoria.");
+      setValidationError(t("developerView.validation.descriptionRequired"));
       return;
     }
 
     if (!form.variant_a_html.trim()) {
-      setValidationError("Debes introducir el HTML de la variante A.");
+      setValidationError(t("developerView.validation.variantARequired"));
       return;
     }
 
     if (!looksLikeHtml(form.variant_a_html)) {
       setValidationError(
-        "La variante A debe contener HTML válido. Por ejemplo: <div>Contenido</div>."
+        t("developerView.validation.variantAInvalid")
       );
       return;
     }
 
     if (form.type === "ab" && !form.variant_b_html.trim()) {
-      setValidationError("Debes introducir el HTML de la variante B.");
+      setValidationError(t("developerView.validation.variantBRequired"));
       return;
     }
 
     if (form.type === "ab" && !looksLikeHtml(form.variant_b_html)) {
       setValidationError(
-        "La variante B debe contener HTML válido. Por ejemplo: <div>Contenido</div>."
+        t("developerView.validation.variantBInvalid")
       );
       return;
     }
@@ -427,7 +436,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
     if (unsafeA || unsafeB) {
       setValidationError(
-        "El HTML contiene etiquetas o atributos no permitidos (por ejemplo <script> u onClick)."
+        t("developerView.validation.unsafeHtml")
       );
       return;
     }
@@ -447,7 +456,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
           instructions: form.instructions,
           type: form.type,
           category: form.category,
-          created_by: currentUser?.name || "Unknown developer",
+          created_by: currentUser?.name || t("common.roles.developer"),
           created_by_id: currentUser?.id || null,
           status: "pending",
           variant_a_html: form.variant_a_html,
@@ -467,7 +476,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
         instructions: form.instructions,
         type: form.type,
         category: form.category,
-        created_by: currentUser?.name || "Unknown developer",
+        created_by: currentUser?.name || t("common.roles.developer"),
         created_by_id: currentUser?.id || null,
         status: "pending",
         variant_a_html: form.variant_a_html,
@@ -544,10 +553,15 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       if (selectedExperiment.type === "ab" && countA !== countB) {
         const winner = countA > countB ? "A" : "B";
 
-        return `La variante ${winner} es preferida por los usuarios, pero existe una debilidad clara en: "${worstQuestion.text.toLowerCase()}".`;
+        return t("developerView.recommendation.abWeakness", {
+          variant: winner,
+          question: t(`evaluation.standardQuestions.${worstQuestion.id}`).toLowerCase(),
+        });
       }
 
-      return `El principal problema detectado está relacionado con: "${worstQuestion.text.toLowerCase()}".`;
+      return t("developerView.recommendation.mainProblem", {
+        question: t(`evaluation.standardQuestions.${worstQuestion.id}`).toLowerCase(),
+      });
     }
 
     const approvedQuestions = safeParseArray(selectedExperiment.approved_custom_questions);
@@ -558,10 +572,10 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
           <div className="developer-subheader-row">
             <div>
               <h2>{selectedExperiment.title}</h2>
-              <p>{selectedExperiment.description || "Sin descripción"}</p>
+              <p>{selectedExperiment.description || t("common.noDescription")}</p>
             </div>
             <button onClick={() => setSelectedExperiment(null)}>
-              Volver a mis experimentos
+              {t("developerView.backToMyExperiments")}
             </button>
           </div>
         </section>
@@ -569,7 +583,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
         {selectedExperiment.status === "rejected" &&
           selectedExperiment.moderation_comment && (
             <section className="card moderation-feedback-box">
-              <h4>Feedback del moderador</h4>
+              <h4>{t("developerView.moderatorFeedback")}</h4>
               <p>{selectedExperiment.moderation_comment}</p>
             </section>
           )}
@@ -580,20 +594,28 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
               selectedExperiment.type === "ab" ? "detail-block-wide" : ""
             }`}
 >
-            <h3>Información del experimento</h3>
-            <p><strong>Tipo:</strong> {selectedExperiment.type}</p>
-            <p><strong>Categoría:</strong> {selectedExperiment.category || "Sin categoría"}</p>
+            <h3>{t("developerView.experimentInfo")}</h3>
             <p>
-              <strong>Estado:</strong>{" "}
+              <strong>{t("common.type")}:</strong>{" "}
+              {t(`common.experimentTypes.${selectedExperiment.type}`)}
+            </p>
+            <p>
+              <strong>{t("common.category")}:</strong>{" "}
+              {selectedExperiment.category
+                ? t(`common.categories.${selectedExperiment.category}`)
+                : t("common.noCategory")}
+            </p>
+            <p>
+              <strong>{t("common.status")}:</strong>{" "}
               <span className={`status-badge status-${selectedExperiment.status}`}>
-                {selectedExperiment.status}
+                {t(`common.statuses.${selectedExperiment.status}`)}
               </span>
             </p>
-            <p><strong>Autor:</strong> {selectedExperiment.created_by}</p>
+            <p><strong>{t("common.author")}:</strong> {selectedExperiment.created_by}</p>
 
             {approvedQuestions.length > 0 && (
               <>
-                <p><strong>Preguntas aprobadas:</strong></p>
+                <p><strong>{t("developerView.approvedQuestions")}:</strong></p>
                 <ul className="approved-questions-list">
                   {approvedQuestions.map((q, i) => (
                     <li key={i}>{q}</li>
@@ -610,8 +632,8 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
           >
             <h3>
               {selectedExperiment.type === "ab"
-                ? "Componentes comparados"
-                : "Componente evaluado"}
+                ? t("developerView.comparedComponents")
+                : t("developerView.evaluatedComponent")}
             </h3>
 
             {selectedExperiment.type === "single" && (
@@ -626,7 +648,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
             {selectedExperiment.type === "ab" && (
               <div className="ab-container">
                 <div className="ab-variant">
-                  <h4>Variante A</h4>
+                  <h4>{t("common.variantA")}</h4>
                   <iframe
                     title={`developer-detail-preview-a-${selectedExperiment.id}`}
                     className="preview-frame"
@@ -636,7 +658,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                 </div>
 
                 <div className="ab-variant">
-                  <h4>Variante B</h4>
+                  <h4>{t("common.variantB")}</h4>
                   <iframe
                     title={`developer-detail-preview-b-${selectedExperiment.id}`}
                     className="preview-frame"
@@ -649,44 +671,44 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
           </div>
 
           <div className="card detail-block">
-            <h3>Resumen global</h3>
+            <h3>{t("developerView.globalSummary")}</h3>
 
-            {loadingResults[selectedExperiment.id] && <p>Cargando resultados...</p>}
+            {loadingResults[selectedExperiment.id] && <p>{t("common.loading")}</p>}
 
             {!loadingResults[selectedExperiment.id] && !experimentResults && (
-              <p>No se han cargado los resultados todavía.</p>
+              <p>{t("developerView.resultsNotLoaded")}</p>
             )}
 
             {experimentResults && (
               <> 
                 {generateRecommendation() && (
                   <div className="insight-main">
-                    <p><strong>Recomendaciones principales</strong></p>
+                    <p><strong>{t("developerView.mainRecommendations")}</strong></p>
                     <p>{generateRecommendation()}</p>
                   </div>
                 )}
                 <div className="results-summary">
                   <div className="summary-item">
-                    <span className="summary-label">Evaluaciones</span>
+                    <span className="summary-label">{t("developerView.evaluations")}</span>
                     <span className="summary-value">{experimentResults.total}</span>
                   </div>
 
                   {globalAverage !== null && (
                     <div className="summary-item">
-                      <span className="summary-label">Media global</span>
+                      <span className="summary-label">{t("developerView.globalAverage")}</span>
                       <span className="summary-value">{globalAverage.toFixed(2)} / 5</span>
                     </div>
                   )}
 
                   {selectedExperiment.type === "ab" && (countA + countB) > 0 && (
                     <div className="summary-item">
-                      <span className="summary-label">Preferencia</span>
+                      <span className="summary-label">{t("developerView.preference")}</span>
                       <span className="summary-value">
                         {countA > countB
                           ? `A (${percentA}%)`
                           : countB > countA
                           ? `B (${percentB}%)`
-                          : "Empate"}
+                          : t("common.tie")}
                       </span>
                     </div>
                   )}
@@ -695,35 +717,41 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                 {experimentResults.total === 0 && (
                  <div className="empty-state">
                   <div className="empty-state-icon">＋</div>
-                  <h3>No hay experimentos creados</h3>
+                  <h3>{t("developerView.noResultsTitle")}</h3>
                   <p>
-                    Crea tu primer experimento para empezar a recoger evaluaciones de accesibilidad cognitiva.
+                    {t("developerView.noResultsBody")}
                   </p>
                 </div>
                 )}
 
                 {worstQuestion && worstValue !== null && (
                   <div className="worst-question-box">
-                    <p><strong>Principal problema detectado:</strong></p>
+                    <p><strong>{t("developerView.worstIssue")}:</strong></p>
                     <p className="insight-subtext">
-                      Este aspecto puede estar dificultando la comprensión o interacción.
+                      {t("developerView.worstIssueHelp")}
                     </p>
-                    <p>{worstQuestion.text} ({worstValue.toFixed(2)} / 5)</p>
+                    <p>
+                      {t(`evaluation.standardQuestions.${worstQuestion.id}`)}{" "}
+                      ({worstValue.toFixed(2)} / 5)
+                    </p>
                   </div>
                 )}
 
                 {bestQuestion && bestValue !== null && (
                   <div className="best-question-box">
-                    <p><strong>Punto positivo principal:</strong></p>
+                    <p><strong>{t("developerView.bestPoint")}:</strong></p>
                     <p className="insight-subtext">
-                      Este aspecto está funcionando especialmente bien.
+                      {t("developerView.bestPointHelp")}
                     </p>
-                    <p>{bestQuestion.text} ({bestValue.toFixed(2)} / 5)</p>
+                    <p>
+                      {t(`evaluation.standardQuestions.${bestQuestion.id}`)}{" "}
+                      ({bestValue.toFixed(2)} / 5)
+                    </p>
                   </div>
                 )}
 
                 <div className="card detail-block detail-block-wide">
-                  <h3>Resultados por pregunta estándar</h3>
+                  <h3>{t("developerView.standardResults")}</h3>
 
                   <div className="standard-results">
                     {sortedQuestions.map((question) => {
@@ -733,7 +761,9 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                       return (
                         <div key={question.id} className="metric-block">
                           <p>
-                            <strong>{question.text}</strong>{" "}
+                            <strong>
+                              {t(`evaluation.standardQuestions.${question.id}`)}
+                            </strong>{" "}
                             {value.toFixed(2)} / 5
                           </p>
 
@@ -754,10 +784,10 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
               {selectedExperiment.type === "ab" && (countA + countB) > 0 && (
                 <div className="card detail-block detail-block-wide">
-                  <h3>Resultados A/B</h3>
+                  <h3>{t("developerView.abResults")}</h3>
 
-                  <p>Variante A: {countA} votos ({percentA}%)</p>
-                  <p>Variante B: {countB} votos ({percentB}%)</p>
+                  <p>{t("common.variantA")}: {countA} {t("developerView.votes")} ({percentA}%)</p>
+                  <p>{t("common.variantB")}: {countB} {t("developerView.votes")} ({percentB}%)</p>
 
                   <div className="ab-bar">
                     <div className="ab-bar-a" style={{ width: `${percentA}%` }}>
@@ -770,17 +800,18 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
                   <p>
                     <strong>
-                      Ganadora: {countA > countB ? "A" : countB > countA ? "B" : "Empate"}
+                      {t("developerView.winner")}:{" "}
+                      {countA > countB ? "A" : countB > countA ? "B" : t("common.tie")}
                     </strong>
                   </p>
 
                   {(countA > 0 || countB > 0) && (
                     <div className="ab-metrics">
-                      <p><strong>Detalle por variante:</strong></p>
+                      <p><strong>{t("developerView.variantDetail")}:</strong></p>
 
                       {countA > 0 && (
                         <div>
-                          <p><strong>Variante A</strong></p>
+                          <p><strong>{t("common.variantA")}</strong></p>
                           {sortedQuestions.map((question) => {
                             const value = questionAveragesA[question.id];
                             if (value === null || value === undefined) return null;
@@ -795,7 +826,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
                       {countB > 0 && (
                         <div>
-                          <p><strong>Variante B</strong></p>
+                          <p><strong>{t("common.variantB")}</strong></p>
                           {sortedQuestions.map((question) => {
                             const value = questionAveragesB[question.id];
                             if (value === null || value === undefined) return null;
@@ -812,9 +843,9 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
                   {recommendedVariant && (
                     <div className="recommendation-box">
-                      <p><strong>Conclusión automática:</strong></p>
+                      <p><strong>{t("developerView.automaticConclusion")}:</strong></p>
                       <p>
-                        <strong>Variante recomendada:</strong>{" "}
+                        <strong>{t("developerView.recommendedVariant")}:</strong>{" "}
                         {recommendedVariant}
                       </p>
                       <p>{recommendationReason}</p>
@@ -825,7 +856,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
               {evaluations.some((e) => e.comment && e.comment.trim() !== "") && (
                 <div className="card detail-block detail-block-wide">
-                  <h3>Comentarios de usuarios</h3>
+                  <h3>{t("developerView.userComments")}</h3>
                   <ul>
                     {evaluations
                       .filter((e) => e.comment && e.comment.trim() !== "")
@@ -838,7 +869,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
               {evaluations.some((e) => e.custom_answers) && (
                 <div className="card detail-block detail-block-wide">
-                  <h3>Respuestas a preguntas personalizadas</h3>
+                  <h3>{t("developerView.customAnswers")}</h3>
 
                   {evaluations.map((evaluation, index) => {
                     const customAnswers = safeParseObject(evaluation.custom_answers);
@@ -847,11 +878,17 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
                     return (
                       <div key={index} className="custom-answer-item">
-                        <p><strong>Evaluación {index + 1}</strong></p>
+                        <p>
+                          <strong>
+                            {t("developerView.evaluationNumber", {
+                              number: index + 1,
+                            })}
+                          </strong>
+                        </p>
                         {entries.map(([question, answer]) => (
                           <p key={question}>
                             <strong>{question}</strong><br />
-                            {answer || "Sin respuesta"}
+                            {answer || t("common.noAnswer")}
                           </p>
                         ))}
                       </div>
@@ -874,17 +911,17 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
           <div className="developer-stats-grid">
             <div className="developer-stat-card approved">
               <h3>{approvedCount}</h3>
-              <p>Aprobados</p>
+              <p>{t("developerView.stats.approved")}</p>
             </div>
 
             <div className="developer-stat-card pending">
               <h3>{pendingCount}</h3>
-              <p>Pendientes</p>
+              <p>{t("developerView.stats.pending")}</p>
             </div>
 
             <div className="developer-stat-card rejected">
               <h3>{rejectedCount}</h3>
-              <p>Rechazados</p>
+              <p>{t("developerView.stats.rejected")}</p>
             </div>
           </div>
         </section>
@@ -892,9 +929,9 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
       {activeTab === "" && (
         <section className="card developer-home">
-          <h2>Panel de desarrollador</h2>
+          <h2>{t("developerView.homeTitle")}</h2>
           <p className="developer-home-subtitle">
-            Selecciona la acción que quieres realizar dentro del sandbox.
+            {t("developerView.homeSubtitle")}
           </p>
 
           <div className="developer-menu-cards">
@@ -903,10 +940,9 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
               className="developer-menu-card"
               onClick={() => setActiveTab("create")}
             >
-              <h3>Crear nuevo experimento</h3>
+              <h3>{t("developerView.createCardTitle")}</h3>
               <p>
-                Define un nuevo experimento, configura sus variantes y envíalo a
-                moderación.
+                {t("developerView.createCardBody")}
               </p>
             </button>
 
@@ -915,9 +951,9 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
               className="developer-menu-card"
               onClick={() => setActiveTab("list")}
             >
-              <h3>Mis experimentos</h3>
+              <h3>{t("developerView.listCardTitle")}</h3>
               <p>
-                Consulta el estado de tus experimentos y analiza sus resultados.
+                {t("developerView.listCardBody")}
               </p>
             </button>
           </div>
@@ -931,96 +967,98 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
               <div>
                 <h2>
                   {editingExperiment
-                    ? "Corregir experimento"
-                    : "Crear experimento"}
+                    ? t("developerView.editTitle")
+                    : t("developerView.createTitle")}
                 </h2>
-                <p>Configura un nuevo experimento para enviarlo a moderación.</p>
+                <p>{t("developerView.createSubtitle")}</p>
               </div>
-              <button onClick={() => setActiveTab("")}>Volver al panel</button>
+              <button onClick={() => setActiveTab("")}>
+                {t("developerView.backToPanel")}
+              </button>
             </div>
           </section>
 
           <section className="card">
             <form onSubmit={handleSubmit} className="form">
-              <label htmlFor="title">Título</label>
+              <label htmlFor="title">{t("developerView.title")}</label>
               <input
                 id="title"
                 name="title"
-                placeholder="Título"
+                placeholder={t("developerView.title")}
                 value={form.title}
                 onChange={handleChange}
                 required
               />
 
-              <label htmlFor="description">Descripción</label>
+              <label htmlFor="description">{t("developerView.description")}</label>
               <textarea
                 id="description"
                 name="description"
-                placeholder="Descripción"
+                placeholder={t("developerView.description")}
                 value={form.description}
                 onChange={handleChange}
               />
 
               <label htmlFor="short_description">
-                Descripción breve
+                {t("developerView.shortDescription")}
               </label>
 
               <textarea
                 id="short_description"
                 name="short_description"
-                placeholder="Resumen breve para las tarjetas de experimentos"
+                placeholder={t("developerView.shortDescriptionPlaceholder")}
                 value={form.short_description}
                 onChange={handleChange}
                 maxLength={120}
               />
 
               <p className="field-help">
-                Máximo recomendado: 120 caracteres.
+                {t("developerView.maxRecommended")}
               </p>
 
               <label htmlFor="instructions">
-                Instrucciones para el usuario
+                {t("developerView.userInstructions")}
               </label>
 
               <textarea
                 id="instructions"
                 name="instructions"
-                placeholder="Indicaciones adicionales para realizar la evaluación"
+                placeholder={t("developerView.instructionsPlaceholder")}
                 value={form.instructions}
                 onChange={handleChange}
               />
 
               <p className="field-help">
-                Opcional. Utiliza este campo si el experimento requiere contexto o instrucciones.
+                {t("developerView.optionalInstructionsHelp")}
               </p>
 
-              <label htmlFor="type">Tipo</label>
+              <label htmlFor="type">{t("common.type")}</label>
               <select id="type" name="type" value={form.type} onChange={handleChange}>
-                <option value="single">Single</option>
-                <option value="ab">A/B</option>
+                <option value="single">{t("common.experimentTypes.single")}</option>
+                <option value="ab">{t("common.experimentTypes.ab")}</option>
               </select>
 
-              <label htmlFor="category">Categoría</label>
+              <label htmlFor="category">{t("common.category")}</label>
               <select id="category" name="category" value={form.category} onChange={handleChange}>
-                <option value="form">Formulario</option>
-                <option value="login">Pantallas de acceso</option>
-                <option value="text">Texto</option>
-                <option value="button">Botón / CTA</option>
-                <option value="navigation">Navegación</option>
-                <option value="other">Otro</option>
+                <option value="form">{t("common.categories.form")}</option>
+                <option value="login">{t("common.categories.login")}</option>
+                <option value="text">{t("common.categories.text")}</option>
+                <option value="button">{t("common.categories.button")}</option>
+                <option value="navigation">{t("common.categories.navigation")}</option>
+                <option value="other">{t("common.categories.other")}</option>
               </select>
 
-              <label htmlFor="variant_a_html">HTML variante A</label>
+              <label htmlFor="variant_a_html">{t("developerView.htmlVariantA")}</label>
               <div className="info-banner">
-                <strong>JavaScript interactivo permitido.</strong>
+                <strong>{t("developerView.interactiveJsTitle")}</strong>
                 <p>
-                  Puedes incluir JavaScript básico dentro de etiquetas &lt;script&gt; para componentes como menús desplegables, acordeones o tabs. Por seguridad, no se permite acceso a cookies, almacenamiento local, red ni al contexto principal de la aplicación.
+                  {t("developerView.interactiveJsBody")}
                 </p>
               </div>
               <textarea
                 id="variant_a_html"
                 name="variant_a_html"
-                placeholder="HTML variante A"
+                placeholder={t("developerView.htmlVariantA")}
                 value={form.variant_a_html}
                 onChange={handleChange}
                 required
@@ -1028,7 +1066,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
               {form.variant_a_html.trim() && (
                 <div className="developer-preview-block">
-                  <h3>Vista previa variante A</h3>
+                  <h3>{t("developerView.previewA")}</h3>
                   <iframe
                     title="developer-preview-a"
                     className="preview-frame"
@@ -1040,11 +1078,11 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
               {form.type === "ab" && (
                 <>
-                  <label htmlFor="variant_b_html">HTML variante B</label>
+                  <label htmlFor="variant_b_html">{t("developerView.htmlVariantB")}</label>
                   <textarea
                     id="variant_b_html"
                     name="variant_b_html"
-                    placeholder="HTML variante B"
+                    placeholder={t("developerView.htmlVariantB")}
                     value={form.variant_b_html}
                     onChange={handleChange}
                     required
@@ -1052,7 +1090,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
                   {form.variant_b_html.trim() && (
                     <div className="developer-preview-block">
-                      <h3>Vista previa variante B</h3>
+                      <h3>{t("developerView.previewB")}</h3>
                       <iframe
                         title="developer-preview-b"
                         className="preview-frame"
@@ -1066,22 +1104,22 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
               <div className="custom-questions-card">
                 <div className="custom-questions-header">
-                  <h3>Preguntas personalizadas</h3>
+                  <h3>{t("developerView.customQuestions")}</h3>
                   <span className="custom-questions-limit">
                     {customQuestions.length}/3
                   </span>
                 </div>
 
                 <p className="custom-questions-subtext">
-                  Añade preguntas específicas para complementar la evaluación estándar.
+                  {t("developerView.customQuestionsHelp")}
                 </p>
 
-                <label htmlFor="newQuestionInput">Añadir pregunta personalizada</label>
+                <label htmlFor="newQuestionInput">{t("developerView.addCustomQuestion")}</label>
                 <div className="add-question-row">
                   <input
                     id="newQuestionInput"
                     type="text"
-                    placeholder="Escribe una pregunta..."
+                    placeholder={t("developerView.customQuestionPlaceholder")}
                     value={newQuestion}
                     onChange={(e) => setNewQuestion(e.target.value)}
                     disabled={customQuestions.length >= 3}
@@ -1093,22 +1131,22 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                       const question = newQuestion.trim();
 
                       if (!question) {
-                        setValidationError("La pregunta personalizada no puede estar vacía.");
+                        setValidationError(t("developerView.validation.emptyQuestion"));
                         return;
                       }
 
                       if (question.length < 10) {
-                        setValidationError("La pregunta personalizada debe ser más descriptiva.");
+                        setValidationError(t("developerView.validation.shortQuestion"));
                         return;
                       }
 
                       if (customQuestions.includes(question)) {
-                        setValidationError("Esta pregunta personalizada ya ha sido añadida.");
+                        setValidationError(t("developerView.validation.duplicateQuestion"));
                         return;
                       }
 
                       if (customQuestions.length >= 3) {
-                        setValidationError("Solo puedes añadir un máximo de 3 preguntas personalizadas.");
+                        setValidationError(t("developerView.validation.maxQuestions"));
                         return;
                       }
 
@@ -1118,7 +1156,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                     }}
                     disabled={customQuestions.length >= 3}
                   >
-                    Añadir
+                    {t("developerView.add")}
                   </button>
                 </div>
 
@@ -1131,7 +1169,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                         <button
                           type="button"
                           className="remove-question-btn"
-                          aria-label="Eliminar pregunta"
+                          aria-label={t("developerView.removeQuestion")}
                           onClick={() =>
                             setCustomQuestions((prev) =>
                               prev.filter((_, i) => i !== idx)
@@ -1152,10 +1190,10 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
               <button type="submit" disabled={loading}>
                 {loading
-                  ? "Guardando..."
+                  ? t("developerView.saving")
                   : editingExperiment
-                  ? "Reenviar experimento"
-                  : "Crear experimento"}
+                  ? t("developerView.resubmitExperiment")
+                  : t("developerView.createExperiment")}
               </button>
             </form>
           </section>
@@ -1169,19 +1207,20 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
               <section className="card developer-subheader">
                 <div className="developer-subheader-row">
                   <div>
-                    <h2>Mis experimentos</h2>
+                    <h2>{t("developerView.listCardTitle")}</h2>
                     <p>
-                      Revisa el estado de tus experimentos y consulta los resultados
-                      disponibles.
+                      {t("developerView.listSubtitle")}
                     </p>
                   </div>
-                  <button onClick={() => setActiveTab("")}>Volver al panel</button>
+                  <button onClick={() => setActiveTab("")}>
+                    {t("developerView.backToPanel")}
+                  </button>
                 </div>
               </section>
 
               <section className="card">
                 {experiments.length === 0 ? (
-                  <p>No hay experimentos todavía.</p>
+                  <p>{t("developerView.noExperiments")}</p>
                 ) : (
                   <div className="experiment-list">
                     {experiments.map((experiment) => {
@@ -1196,24 +1235,32 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                             <div>
                               <h3>{experiment.title}</h3>
                               <p>
-                                {experiment.short_description || "Sin descripción breve"}
+                                {experiment.short_description || t("common.noShortDescription")}
                               </p>
                             </div>
 
                             <span className={`status-badge status-${experiment.status}`}>
-                              {experiment.status}
+                              {t(`common.statuses.${experiment.status}`)}
                             </span>
                           </div>
 
                           <div className="experiment-card-meta">
-                            <p><strong>Tipo:</strong> {experiment.type}</p>
-                            <p><strong>Categoría:</strong> {experiment.category || "Sin categoría"}</p>
                             <p>
-                              <strong>Preguntas propuestas:</strong>{" "}
+                              <strong>{t("common.type")}:</strong>{" "}
+                              {t(`common.experimentTypes.${experiment.type}`)}
+                            </p>
+                            <p>
+                              <strong>{t("common.category")}:</strong>{" "}
+                              {experiment.category
+                                ? t(`common.categories.${experiment.category}`)
+                                : t("common.noCategory")}
+                            </p>
+                            <p>
+                              <strong>{t("developerView.proposedQuestions")}:</strong>{" "}
                               {customQuestionsList.length}
                             </p>
                             <p>
-                              <strong>Preguntas aprobadas:</strong>{" "}
+                              <strong>{t("developerView.approvedQuestions")}:</strong>{" "}
                               {approvedQuestionsList.length}
                             </p>
                           </div>
@@ -1224,8 +1271,8 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                               disabled={loadingResults[experiment.id]}
                             >
                               {loadingResults[experiment.id]
-                                ? "Cargando..."
-                                : "Ver resultados"}
+                                ? t("common.loading")
+                                : t("developerView.viewResults")}
                             </button>
 
                             {experiment.status === "rejected" && (
@@ -1252,7 +1299,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                                   );
                                 }}
                               >
-                                Corregir y reenviar
+                                {t("developerView.correctAndResubmit")}
                               </button>
                             )}
 
@@ -1266,7 +1313,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                                 className="reject-btn"
                                 onClick={() => setArchiveTarget(experiment)}
                               >
-                                Archivar
+                                {t("developerView.archive")}
                               </button>
                             )}
                           </div>
@@ -1284,9 +1331,9 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       )}
       {showConfirmCreate && (
         <ConfirmModal
-          title="Enviar experimento a validación"
-          message="El experimento se enviará al moderador para su revisión. No será visible para los usuarios hasta que sea aprobado."
-          confirmLabel={loading ? "Enviando..." : "Confirmar envío"}
+          title={t("developerView.confirmCreateTitle")}
+          message={t("developerView.confirmCreateMessage")}
+          confirmLabel={loading ? t("developerView.sending") : t("developerView.confirmSend")}
           onCancel={() => setShowConfirmCreate(false)}
           onConfirm={confirmCreateExperiment}
         />
@@ -1294,9 +1341,11 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
       {archiveTarget && (
           <ConfirmModal
-            title="Archivar experimento"
-            message={`¿Seguro que quieres archivar "${archiveTarget.title}"? Dejará de aparecer en tus experimentos.`}
-            confirmLabel="Archivar"
+            title={t("developerView.archiveTitle")}
+            message={t("developerView.archiveMessage", {
+              title: archiveTarget.title,
+            })}
+            confirmLabel={t("developerView.archive")}
             confirmClassName="reject-btn"
             onCancel={() => setArchiveTarget(null)}
             onConfirm={async () => {
