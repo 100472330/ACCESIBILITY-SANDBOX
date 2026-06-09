@@ -1142,6 +1142,18 @@ button:disabled {
   gap: 1rem;
 }
 
+.single-standard-results {
+  grid-template-columns: 1fr;
+}
+
+.single-standard-results .metric-block {
+  width: 100%;
+}
+
+.single-standard-results .metric-bar {
+  width: 100%;
+}
+
 .metric-block {
   width: 100%;
 }

@@ -944,7 +944,7 @@ function DeveloperView({
                       )}
                     </div>
                   ) : (
-                    <div className="standard-results">
+                    <div className="standard-results single-standard-results">
                       {sortedQuestions.map((question) => {
                         const value = questionAverages[question.id];
                         if (value === null || value === undefined) return null;
