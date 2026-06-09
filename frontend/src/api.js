@@ -78,10 +78,14 @@ export async function createEvaluation(payload) {
 }
 
 export async function getExperimentResults(id) {
-  const response = await fetch(`http://localhost:4000/experiments/${id}/results`);
+  const response = await fetch(`${API_BASE_URL}/experiments/${id}/results`, {
+    headers: getAuthHeaders(),
+  });
+
   if (!response.ok) {
     throw new Error("Failed to fetch results");
   }
+
   return response.json();
 }
 
@@ -150,7 +154,9 @@ export async function loginUser(payload) {
 }
 
 export async function getPendingUsers() {
-  const response = await fetch(`${API_BASE_URL}/users/pending`);
+  const response = await fetch(`${API_BASE_URL}/users/pending`, {
+    headers: getAuthHeaders(),
+  });
 
   if (!response.ok) {
     const errorData = await response.json();
@@ -159,7 +165,6 @@ export async function getPendingUsers() {
 
   return response.json();
 }
-
 export async function updateUserStatus(id, accountStatus) {
   const response = await fetch(`${API_BASE_URL}/users/${id}/status`, {
     method: "PATCH",
@@ -178,7 +183,9 @@ export async function updateUserStatus(id, accountStatus) {
 }
 
 export async function getEvaluatedExperimentIds(userId) {
-  const response = await fetch(`${API_BASE_URL}/evaluations/user/${userId}`);
+  const response = await fetch(`${API_BASE_URL}/evaluations/user/${userId}`, {
+    headers: getAuthHeaders(),
+  });
 
   if (!response.ok) {
     const errorData = await response.json();

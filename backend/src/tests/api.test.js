@@ -435,19 +435,46 @@ describe("GET /users/pending", () => {
 });
 
 describe("PATCH /users/:id/status", () => {
-  test("updates developer status for valid status classes", async () => {
+  test("requires moderator authentication", async () => {
+    const user = await insertUser({ email: nextEmail("status-user") });
+    const userToken = await login(user);
+
+    const missingAuthResponse = await request(app)
+      .patch(`/users/${user.id}/status`)
+      .send({ account_status: "approved" });
+    const wrongRoleResponse = await request(app)
+      .patch(`/users/${user.id}/status`)
+      .set("Authorization", `Bearer ${userToken}`)
+      .send({ account_status: "approved" });
+
+    expect(missingAuthResponse.status).toBe(401);
+    expect(wrongRoleResponse.status).toBe(403);
+    expect(wrongRoleResponse.body).toEqual({ error: "Insufficient permissions" });
+  });
+
+  test("updates developer status for a moderator and rejects invalid values", async () => {
+    const moderator = await insertUser({
+      email: nextEmail("status-moderator"),
+      role: "moderator",
+    });
     const developer = await insertUser({
       email: nextEmail("status-developer"),
       role: "developer",
       accountStatus: "pending",
     });
+    const token = await login(moderator);
 
     const response = await request(app)
       .patch(`/users/${developer.id}/status`)
+      .set("Authorization", `Bearer ${token}`)
       .send({ account_status: "approved" });
     const updated = await get("SELECT account_status FROM users WHERE id = ?", [
       developer.id,
     ]);
+    const invalidResponse = await request(app)
+      .patch(`/users/${developer.id}/status`)
+      .set("Authorization", `Bearer ${token}`)
+      .send({ account_status: "disabled" });
 
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
@@ -455,26 +482,8 @@ describe("PATCH /users/:id/status", () => {
       changes: 1,
     });
     expect(updated.account_status).toBe("approved");
-  });
-
-  test("rejects invalid status and ignores non-developer users", async () => {
-    const user = await insertUser({ email: nextEmail("status-user") });
-
-    const invalidResponse = await request(app)
-      .patch(`/users/${user.id}/status`)
-      .send({ account_status: "disabled" });
-    const nonDeveloperResponse = await request(app)
-      .patch(`/users/${user.id}/status`)
-      .send({ account_status: "rejected" });
-    const unchanged = await get("SELECT account_status FROM users WHERE id = ?", [
-      user.id,
-    ]);
-
     expect(invalidResponse.status).toBe(400);
     expect(invalidResponse.body).toEqual({ error: "Invalid account status" });
-    expect(nonDeveloperResponse.status).toBe(200);
-    expect(nonDeveloperResponse.body.changes).toBe(0);
-    expect(unchanged.account_status).toBe("approved");
   });
 });
 
@@ -825,9 +834,13 @@ describe("POST /evaluations", () => {
 });
 
 describe("GET /evaluations/user/:userId", () => {
-  test("returns an empty list or the evaluated experiment ids for a user", async () => {
+  test("requires authentication and enforces ownership for users", async () => {
     const user = await insertUser({ email: nextEmail("evaluated-user") });
     const otherUser = await insertUser({ email: nextEmail("other-evaluated-user") });
+    const moderator = await insertUser({
+      email: nextEmail("evaluated-moderator"),
+      role: "moderator",
+    });
     const experiment = await insertExperiment({ status: "approved" });
     const otherExperiment = await insertExperiment({ status: "approved" });
     await insertEvaluation({
@@ -844,87 +857,151 @@ describe("GET /evaluations/user/:userId", () => {
       comprehension: 3,
       cognitive_load: 3,
     });
+    const userToken = await login(user);
+    const otherUserToken = await login(otherUser);
+    const moderatorToken = await login(moderator);
 
-    const emptyResponse = await request(app).get("/evaluations/user/99999");
-    const populatedResponse = await request(app).get(
+    const missingAuthResponse = await request(app).get(
       `/evaluations/user/${user.id}`
     );
+    const ownResponse = await request(app)
+      .get(`/evaluations/user/${user.id}`)
+      .set("Authorization", `Bearer ${userToken}`);
+    const otherResponse = await request(app)
+      .get(`/evaluations/user/${user.id}`)
+      .set("Authorization", `Bearer ${otherUserToken}`);
+    const moderatorResponse = await request(app)
+      .get(`/evaluations/user/${user.id}`)
+      .set("Authorization", `Bearer ${moderatorToken}`);
 
-    expect(emptyResponse.status).toBe(200);
-    expect(emptyResponse.body).toEqual([]);
-    expect(populatedResponse.status).toBe(200);
-    expect(populatedResponse.body).toEqual([experiment.id]);
+    expect(missingAuthResponse.status).toBe(401);
+    expect(ownResponse.status).toBe(200);
+    expect(ownResponse.body).toEqual([experiment.id]);
+    expect(otherResponse.status).toBe(403);
+    expect(otherResponse.body).toEqual({ error: "Insufficient permissions" });
+    expect(moderatorResponse.status).toBe(200);
+    expect(moderatorResponse.body).toEqual([experiment.id]);
   });
 });
 
 describe("GET /experiments/:id/results", () => {
-  test("returns zero totals and averages when there are no evaluations", async () => {
-    const experiment = await insertExperiment();
-
-    const response = await request(app).get(
-      `/experiments/${experiment.id}/results`
-    );
-
-    expect(response.status).toBe(200);
-    expect(response.body).toEqual({
-      total: 0,
-      averages: {
-        clarity: 0,
-        comprehension: 0,
-        cognitive_load: 0,
-      },
-      evaluations: [],
+  test("requires authentication, enforces ownership, and returns 404 for missing experiments", async () => {
+    const owner = await insertUser({
+      email: nextEmail("results-owner"),
+      role: "developer",
     });
-  });
-
-  test("returns totals, averages, and evaluations for multiple rows", async () => {
-    const experiment = await insertExperiment();
+    const otherDeveloper = await insertUser({
+      email: nextEmail("results-other"),
+      role: "developer",
+    });
+    const moderator = await insertUser({
+      email: nextEmail("results-moderator"),
+      role: "moderator",
+    });
+    const ownedExperiment = await insertExperiment({
+      created_by: owner.name,
+      created_by_id: owner.id,
+    });
+    const otherExperiment = await insertExperiment({
+      created_by: otherDeveloper.name,
+      created_by_id: otherDeveloper.id,
+    });
     await insertEvaluation({
-      experiment_id: experiment.id,
+      experiment_id: ownedExperiment.id,
       user_id: 1,
       clarity: 1,
       comprehension: 3,
       cognitive_load: 5,
     });
     await insertEvaluation({
-      experiment_id: experiment.id,
+      experiment_id: ownedExperiment.id,
       user_id: 2,
       clarity: 5,
       comprehension: 5,
       cognitive_load: 1,
     });
     await insertEvaluation({
-      experiment_id: (await insertExperiment()).id,
+      experiment_id: otherExperiment.id,
       user_id: 3,
       clarity: 5,
       comprehension: 5,
       cognitive_load: 5,
     });
+    const ownerToken = await login(owner);
+    const otherToken = await login(otherDeveloper);
+    const moderatorToken = await login(moderator);
 
-    const response = await request(app).get(
-      `/experiments/${experiment.id}/results`
+    const missingAuthResponse = await request(app).get(
+      `/experiments/${ownedExperiment.id}/results`
     );
+    const ownerResponse = await request(app)
+      .get(`/experiments/${ownedExperiment.id}/results`)
+      .set("Authorization", `Bearer ${ownerToken}`);
+    const otherDeveloperResponse = await request(app)
+      .get(`/experiments/${ownedExperiment.id}/results`)
+      .set("Authorization", `Bearer ${otherToken}`);
+    const moderatorResponse = await request(app)
+      .get(`/experiments/${ownedExperiment.id}/results`)
+      .set("Authorization", `Bearer ${moderatorToken}`);
+    const missingExperimentResponse = await request(app)
+      .get("/experiments/99999/results")
+      .set("Authorization", `Bearer ${ownerToken}`);
 
-    expect(response.status).toBe(200);
-    expect(response.body.total).toBe(2);
-    expect(response.body.averages).toEqual({
+    expect(missingAuthResponse.status).toBe(401);
+    expect(ownerResponse.status).toBe(200);
+    expect(ownerResponse.body.total).toBe(2);
+    expect(ownerResponse.body.averages).toEqual({
       clarity: 3,
       comprehension: 4,
       cognitive_load: 3,
     });
-    expect(response.body.evaluations).toHaveLength(2);
+    expect(ownerResponse.body.evaluations).toHaveLength(2);
+    expect(otherDeveloperResponse.status).toBe(403);
+    expect(otherDeveloperResponse.body).toEqual({
+      error: "Insufficient permissions",
+    });
+    expect(moderatorResponse.status).toBe(200);
+    expect(moderatorResponse.body.total).toBe(2);
+    expect(missingExperimentResponse.status).toBe(404);
+    expect(missingExperimentResponse.body).toEqual({
+      error: "Experiment not found",
+    });
   });
 });
 
 describe("PATCH /experiments/:id/category", () => {
-  test("updates category and rejects empty category boundary", async () => {
+  test("requires moderator authentication", async () => {
+    const user = await insertUser({ email: nextEmail("category-user") });
+    const token = await login(user);
+
+    const missingAuthResponse = await request(app)
+      .patch("/experiments/1/category")
+      .send({ category: "accessibility" });
+    const wrongRoleResponse = await request(app)
+      .patch("/experiments/1/category")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ category: "accessibility" });
+
+    expect(missingAuthResponse.status).toBe(401);
+    expect(wrongRoleResponse.status).toBe(403);
+    expect(wrongRoleResponse.body).toEqual({ error: "Insufficient permissions" });
+  });
+
+  test("updates category for moderators and rejects empty values", async () => {
+    const moderator = await insertUser({
+      email: nextEmail("category-moderator"),
+      role: "moderator",
+    });
     const experiment = await insertExperiment({ category: "ux" });
+    const token = await login(moderator);
 
     const missingResponse = await request(app)
       .patch(`/experiments/${experiment.id}/category`)
+      .set("Authorization", `Bearer ${token}`)
       .send({ category: "" });
     const updateResponse = await request(app)
       .patch(`/experiments/${experiment.id}/category`)
+      .set("Authorization", `Bearer ${token}`)
       .send({ category: "accessibility" });
     const row = await get("SELECT category FROM experiments WHERE id = ?", [
       experiment.id,
@@ -942,11 +1019,34 @@ describe("PATCH /experiments/:id/category", () => {
 });
 
 describe("PATCH /experiments/:id/approved-questions", () => {
-  test("stores array questions and converts non-array input to an empty array", async () => {
+  test("requires moderator authentication", async () => {
+    const user = await insertUser({ email: nextEmail("questions-user") });
+    const token = await login(user);
+
+    const missingAuthResponse = await request(app)
+      .patch("/experiments/1/approved-questions")
+      .send({ approved_custom_questions: [] });
+    const wrongRoleResponse = await request(app)
+      .patch("/experiments/1/approved-questions")
+      .set("Authorization", `Bearer ${token}`)
+      .send({ approved_custom_questions: [] });
+
+    expect(missingAuthResponse.status).toBe(401);
+    expect(wrongRoleResponse.status).toBe(403);
+    expect(wrongRoleResponse.body).toEqual({ error: "Insufficient permissions" });
+  });
+
+  test("stores approved questions for moderators and normalizes non-array input", async () => {
+    const moderator = await insertUser({
+      email: nextEmail("questions-moderator"),
+      role: "moderator",
+    });
     const experiment = await insertExperiment();
+    const token = await login(moderator);
 
     const arrayResponse = await request(app)
       .patch(`/experiments/${experiment.id}/approved-questions`)
+      .set("Authorization", `Bearer ${token}`)
       .send({
         approved_custom_questions: [
           { id: "q1", text: "Question one" },
@@ -959,6 +1059,7 @@ describe("PATCH /experiments/:id/approved-questions", () => {
     );
     const nonArrayResponse = await request(app)
       .patch(`/experiments/${experiment.id}/approved-questions`)
+      .set("Authorization", `Bearer ${token}`)
       .send({ approved_custom_questions: "q1" });
     const nonArrayRow = await get(
       "SELECT approved_custom_questions FROM experiments WHERE id = ?",

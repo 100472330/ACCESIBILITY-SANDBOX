@@ -151,36 +151,41 @@ app.get("/users/pending", authenticateToken, requireRole(["moderator"]), (_req, 
   );
 });
 
-app.patch("/users/:id/status", (req, res) => {
-  const { id } = req.params;
-  const { account_status } = req.body;
+app.patch(
+  "/users/:id/status",
+  authenticateToken,
+  requireRole(["moderator"]),
+  (req, res) => {
+    const { id } = req.params;
+    const { account_status } = req.body;
 
-  const allowedStatuses = ["pending", "approved", "rejected"];
+    const allowedStatuses = ["pending", "approved", "rejected"];
 
-  if (!allowedStatuses.includes(account_status)) {
-    return res.status(400).json({ error: "Invalid account status" });
-  }
-
-  db.run(
-    `
-    UPDATE users
-    SET account_status = ?
-    WHERE id = ?
-      AND role = 'developer'
-    `,
-    [account_status, id],
-    function (err) {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-
-      res.json({
-        message: "User status updated successfully",
-        changes: this.changes,
-      });
+    if (!allowedStatuses.includes(account_status)) {
+      return res.status(400).json({ error: "Invalid account status" });
     }
-  );
-});
+
+    db.run(
+      `
+      UPDATE users
+      SET account_status = ?
+      WHERE id = ?
+        AND role = 'developer'
+      `,
+      [account_status, id],
+      function (err) {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        res.json({
+          message: "User status updated successfully",
+          changes: this.changes,
+        });
+      }
+    );
+  }
+);
 
 app.post("/experiments", authenticateToken, requireRole(["developer"]), (req, res) => {
   const {
@@ -428,68 +433,107 @@ app.post("/evaluations", authenticateToken, requireRole(["user"]), (req, res) =>
   );
 });
 
-app.get("/evaluations/user/:userId", (req, res) => {
-  const { userId } = req.params;
+app.get(
+  "/evaluations/user/:userId",
+  authenticateToken,
+  requireRole(["user", "moderator"]),
+  (req, res) => {
+    const { userId } = req.params;
 
-  db.all(
-    `
-    SELECT experiment_id
-    FROM evaluations
-    WHERE user_id = ?
-    `,
-    [userId],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
-      }
-
-      res.json(rows.map((row) => row.experiment_id));
+    if (req.user.role !== "moderator" && Number(req.user.id) !== Number(userId)) {
+      return res.status(403).json({ error: "Insufficient permissions" });
     }
-  );
-});
 
-app.get("/experiments/:id/results", (req, res) => {
-  const { id } = req.params;
+    db.all(
+      `
+      SELECT experiment_id
+      FROM evaluations
+      WHERE user_id = ?
+      `,
+      [userId],
+      (err, rows) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
 
-  db.all(
-    `SELECT * FROM evaluations WHERE experiment_id = ?`,
-    [id],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: err.message });
+        res.json(rows.map((row) => row.experiment_id));
       }
+    );
+  }
+);
 
-      if (rows.length === 0) {
-        return res.json({
-          total: 0,
-          averages: {
-            clarity: 0,
-            comprehension: 0,
-            cognitive_load: 0,
-          },
-          evaluations: [],
-        });
+app.get(
+  "/experiments/:id/results",
+  authenticateToken,
+  requireRole(["developer", "moderator"]),
+  (req, res) => {
+    const { id } = req.params;
+
+    db.get(
+      `
+      SELECT id, created_by_id
+      FROM experiments
+      WHERE id = ?
+      `,
+      [id],
+      (err, experiment) => {
+        if (err) {
+          return res.status(500).json({ error: err.message });
+        }
+
+        if (!experiment) {
+          return res.status(404).json({ error: "Experiment not found" });
+        }
+
+        if (
+          req.user.role === "developer" &&
+          Number(experiment.created_by_id) !== Number(req.user.id)
+        ) {
+          return res.status(403).json({ error: "Insufficient permissions" });
+        }
+
+        db.all(
+          `SELECT * FROM evaluations WHERE experiment_id = ?`,
+          [id],
+          (resultsErr, rows) => {
+            if (resultsErr) {
+              return res.status(500).json({ error: resultsErr.message });
+            }
+
+            if (rows.length === 0) {
+              return res.json({
+                total: 0,
+                averages: {
+                  clarity: 0,
+                  comprehension: 0,
+                  cognitive_load: 0,
+                },
+                evaluations: [],
+              });
+            }
+
+            const total = rows.length;
+
+            const averages = {
+              clarity:
+                rows.reduce((sum, row) => sum + row.clarity, 0) / total,
+              comprehension:
+                rows.reduce((sum, row) => sum + row.comprehension, 0) / total,
+              cognitive_load:
+                rows.reduce((sum, row) => sum + row.cognitive_load, 0) / total,
+            };
+
+            res.json({
+              total,
+              averages,
+              evaluations: rows,
+            });
+          }
+        );
       }
-
-      const total = rows.length;
-
-      const averages = {
-        clarity:
-          rows.reduce((sum, row) => sum + row.clarity, 0) / total,
-        comprehension:
-          rows.reduce((sum, row) => sum + row.comprehension, 0) / total,
-        cognitive_load:
-          rows.reduce((sum, row) => sum + row.cognitive_load, 0) / total,
-      };
-
-      res.json({
-        total,
-        averages,
-        evaluations: rows,
-      });
-    }
-  );
-});
+    );
+  }
+);
 
 if (require.main === module) {
   app.listen(PORT, () => {
@@ -497,61 +541,69 @@ if (require.main === module) {
   });
 }
 
-app.patch("/experiments/:id/category", (req, res) => {
-  const { id } = req.params;
-  const { category } = req.body;
+app.patch(
+  "/experiments/:id/category",
+  authenticateToken,
+  requireRole(["moderator"]),
+  (req, res) => {
+    const { id } = req.params;
+    const { category } = req.body;
 
-  if (!category) {
-    return res.status(400).json({ error: "Category is required" });
+    if (!category) {
+      return res.status(400).json({ error: "Category is required" });
+    }
+
+    const query = `
+      UPDATE experiments
+      SET category = ?
+      WHERE id = ?
+    `;
+
+    db.run(query, [category, id], function (err) {
+      if (err) {
+        console.error("ERROR updating category:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json({
+        message: "Category updated successfully",
+        changes: this.changes,
+      });
+    });
   }
+);
 
-  const query = `
-    UPDATE experiments
-    SET category = ?
-    WHERE id = ?
-  `;
+app.patch(
+  "/experiments/:id/approved-questions",
+  authenticateToken,
+  requireRole(["moderator"]),
+  (req, res) => {
+    const { id } = req.params;
+    const { approved_custom_questions } = req.body;
 
-  db.run(query, [category, id], function (err) {
-    if (err) {
-      console.error("ERROR updating category:", err);
-      return res.status(500).json({ error: err.message });
-    }
+    const questions = Array.isArray(approved_custom_questions)
+      ? approved_custom_questions
+      : [];
 
-    res.json({
-      message: "Category updated successfully",
-      changes: this.changes,
+    const query = `
+      UPDATE experiments
+      SET approved_custom_questions = ?
+      WHERE id = ?
+    `;
+
+    db.run(query, [JSON.stringify(questions), id], function (err) {
+      if (err) {
+        console.error("ERROR updating approved questions:", err);
+        return res.status(500).json({ error: err.message });
+      }
+
+      res.json({
+        message: "Approved questions updated successfully",
+        changes: this.changes,
+      });
     });
-  });
-});
-
-app.patch("/experiments/:id/approved-questions", (req, res) => {
-  const { id } = req.params;
-  const { approved_custom_questions } = req.body;
-
-  const questions = Array.isArray(approved_custom_questions)
-    ? approved_custom_questions
-    : [];
-
-  const query = `
-    UPDATE experiments
-    SET approved_custom_questions = ?
-    WHERE id = ?
-  `;
-
-  db.run(query, [JSON.stringify(questions), id], function (err) {
-    if (err) {
-      console.error("ERROR updating approved questions:", err);
-      return res.status(500).json({ error: err.message });
-    }
-
-    res.json({
-      message: "Approved questions updated successfully",
-      changes: this.changes,
-    });
-  });
-});
-
-module.exports = app;
+  }
+);
 
 app.get(
   "/evaluations/my",
@@ -623,3 +675,5 @@ app.patch(
     );
   }
 );
+
+module.exports = app;
