@@ -1745,3 +1745,7 @@ button:disabled {
   margin: 0;
   color: var(--text-main);
 }
+
+.detail-block-wide .preview-frame {
+  height: 520px;
+}

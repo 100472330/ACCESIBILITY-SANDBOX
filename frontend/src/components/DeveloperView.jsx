@@ -682,9 +682,7 @@ function DeveloperView({
 
         <section className="developer-detail-grid">
           <div
-            className={`card detail-block ${
-              selectedExperiment.type === "ab" ? "detail-block-wide" : ""
-            }`}
+           className="card detail-block detail-block-wide"
 >
             <h3>{t("developerView.experimentInfo")}</h3>
             <p>
@@ -717,11 +715,7 @@ function DeveloperView({
             )}
           </div>
 
-          <div
-            className={`card detail-block ${
-              selectedExperiment.type === "ab" ? "detail-block-wide" : ""
-            }`}
-          >
+          <div className="card detail-block detail-block-wide">
             <h3>
               {selectedExperiment.type === "ab"
                 ? t("developerView.comparedComponents")
@@ -1145,15 +1139,6 @@ function DeveloperView({
                 required
               />
 
-              <label htmlFor="description">{t("developerView.description")}</label>
-              <textarea
-                id="description"
-                name="description"
-                placeholder={t("developerView.description")}
-                value={form.description}
-                onChange={handleChange}
-              />
-
               <label htmlFor="short_description">
                 {t("developerView.shortDescription")}
               </label>
@@ -1170,6 +1155,15 @@ function DeveloperView({
               <p className="field-help">
                 {t("developerView.maxRecommended")}
               </p>
+
+              <label htmlFor="description">{t("developerView.description")}</label>
+              <textarea
+                id="description"
+                name="description"
+                placeholder={t("developerView.description")}
+                value={form.description}
+                onChange={handleChange}
+              />
 
               <label htmlFor="instructions">
                 {t("developerView.userInstructions")}
