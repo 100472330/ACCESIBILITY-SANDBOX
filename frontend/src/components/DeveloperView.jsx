@@ -2,20 +2,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { getExperimentResults } from "../api";
 import { buildPreviewHtml } from "../utils/previewHtml";
+import {
+  abStandardQuestions,
+  getABAnswerKey,
+  getQuestionLabel,
+  singleStandardQuestions,
+} from "../utils/evaluationQuestions";
 import ConfirmModal from "./ConfirmModal";
-
-const standardQuestions = [
-  { id: "q1" },
-  { id: "q2" },
-  { id: "q3" },
-  { id: "q4" },
-  { id: "q5" },
-  { id: "q6" },
-  { id: "q7" },
-  { id: "q8" },
-  { id: "q9" },
-  { id: "q10" },
-];
 
 function safeParseArray(value) {
   if (Array.isArray(value)) return value;
@@ -47,7 +40,13 @@ function escapeCSV(value) {
   return `"${String(value ?? "").replace(/"/g, '""')}"`;
 }
 
-function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment, onArchiveExperiment,}) {
+function DeveloperView({
+  experiments,
+  currentUser,
+  onCreate,
+  onUpdateExperiment,
+  onArchiveExperiment,
+}) {
   const { t } = useTranslation();
   const [results, setResults] = useState({});
   const [form, setForm] = useState({
@@ -108,22 +107,35 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
   function getComputedResults(experiment) {
     const experimentResults = results[experiment.id];
     const evaluations = experimentResults?.evaluations || [];
+    const isABExperiment = experiment.type === "ab";
+    const questionsForResults = isABExperiment
+      ? abStandardQuestions
+      : singleStandardQuestions;
 
     let countA = 0;
     let countB = 0;
     let percentA = 0;
     let percentB = 0;
+
     const questionAverages = {};
     const questionAveragesA = {};
     const questionAveragesB = {};
 
-    const averageQuestion = (items, questionId) => {
+    const averageQuestion = (items, questionId, variant = null) => {
       const values = items
-        .map((evaluation) => safeParseObject(evaluation.standard_answers)[questionId])
+        .map((evaluation) => {
+          const answers = safeParseObject(evaluation.standard_answers);
+          const answerKey = variant
+            ? getABAnswerKey(variant, questionId)
+            : questionId;
+
+          return answers[answerKey];
+        })
         .filter((value) => value !== undefined && value !== null && value !== "")
         .map(Number);
 
       if (values.length === 0) return null;
+
       return values.reduce((sum, value) => sum + value, 0) / values.length;
     };
 
@@ -135,34 +147,48 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       percentA = totalAB ? ((countA / totalAB) * 100).toFixed(1) : 0;
       percentB = totalAB ? ((countB / totalAB) * 100).toFixed(1) : 0;
 
-      standardQuestions.forEach((question) => {
-        questionAverages[question.id] = averageQuestion(evaluations, question.id);
-        questionAveragesA[question.id] = averageQuestion(
-          evaluations.filter((e) => e.preferred_variant === "A"),
-          question.id
-        );
-        questionAveragesB[question.id] = averageQuestion(
-          evaluations.filter((e) => e.preferred_variant === "B"),
-          question.id
-        );
+      questionsForResults.forEach((question) => {
+        if (isABExperiment) {
+          const averageA = averageQuestion(evaluations, question.id, "A");
+          const averageB = averageQuestion(evaluations, question.id, "B");
+
+          questionAveragesA[question.id] = averageA;
+          questionAveragesB[question.id] = averageB;
+
+          const combinedValues = [averageA, averageB].filter(
+            (value) => value !== null && value !== undefined
+          );
+
+          questionAverages[question.id] = combinedValues.length
+            ? combinedValues.reduce((sum, value) => sum + value, 0) /
+              combinedValues.length
+            : null;
+        } else {
+          questionAverages[question.id] = averageQuestion(
+            evaluations,
+            question.id
+          );
+        }
       });
     }
 
-    let globalAverage = null;
-
-    if (evaluations.length > 0) {
-      const values = Object.values(questionAverages).filter(
-        (v) => v !== null && v !== undefined
+    const averageFromObject = (averages) => {
+      const values = Object.values(averages).filter(
+        (value) => value !== null && value !== undefined
       );
 
-      if (values.length > 0) {
-        globalAverage = values.reduce((sum, v) => sum + v, 0) / values.length;
-      }
-    }
+      if (values.length === 0) return null;
+
+      return values.reduce((sum, value) => sum + value, 0) / values.length;
+    };
+
+    const globalAverage = averageFromObject(questionAverages);
+    const globalAverageA = averageFromObject(questionAveragesA);
+    const globalAverageB = averageFromObject(questionAveragesB);
 
     const sortedQuestions =
       evaluations.length > 0
-        ? [...standardQuestions].sort((a, b) => {
+        ? [...questionsForResults].sort((a, b) => {
             const valA = questionAverages[a.id] ?? 0;
             const valB = questionAverages[b.id] ?? 0;
             return valA - valB;
@@ -171,14 +197,32 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
     const worstQuestion = sortedQuestions.length > 0 ? sortedQuestions[0] : null;
     const worstValue = worstQuestion ? questionAverages[worstQuestion.id] : null;
-          
+
+    const bestQuestion =
+      sortedQuestions.length > 0
+        ? sortedQuestions[sortedQuestions.length - 1]
+        : null;
+    const bestValue = bestQuestion ? questionAverages[bestQuestion.id] : null;
+
+    const resultQuestionLabel = (question) => {
+      if (experiment.type === "ab") {
+        return t(`evaluation.abQuestions.${question.id}`, {
+          variant: t("common.experimentTypes.ab"),
+        });
+      }
+
+      return getQuestionLabel(t, experiment.type, question.id);
+    };
+
     function generateRecommendation() {
       if (!experimentResults || experimentResults.total === 0) return null;
-      if (!worstQuestion || worstValue === null || worstValue === undefined) return null;
+      if (!worstQuestion || worstValue === null || worstValue === undefined) {
+        return null;
+      }
 
       if (worstValue < 3) {
         return t("developerView.recommendation.priority", {
-          question: t(`evaluation.standardQuestions.${worstQuestion.id}`),
+          question: resultQuestionLabel(worstQuestion),
           score: worstValue.toFixed(2),
         });
       }
@@ -188,18 +232,31 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       }
 
       return t("developerView.recommendation.improve", {
-        question: t(`evaluation.standardQuestions.${worstQuestion.id}`),
+        question: resultQuestionLabel(worstQuestion),
       });
     }
-
-    const bestQuestion =
-      sortedQuestions.length > 0 ? sortedQuestions[sortedQuestions.length - 1] : null;
-    const bestValue = bestQuestion ? questionAverages[bestQuestion.id] : null;
 
     let recommendedVariant = null;
     let recommendationReason = "";
 
-    if (countA > 0 || countB > 0) {
+    if (isABExperiment && (globalAverageA !== null || globalAverageB !== null)) {
+      if ((globalAverageA ?? 0) > (globalAverageB ?? 0)) {
+        recommendedVariant = "A";
+        recommendationReason = t("developerView.recommendation.betterAverage");
+      } else if ((globalAverageB ?? 0) > (globalAverageA ?? 0)) {
+        recommendedVariant = "B";
+        recommendationReason = t("developerView.recommendation.betterAverage");
+      } else if (countA > countB) {
+        recommendedVariant = "A";
+        recommendationReason = t("developerView.recommendation.morePreferences");
+      } else if (countB > countA) {
+        recommendedVariant = "B";
+        recommendationReason = t("developerView.recommendation.morePreferences");
+      } else {
+        recommendedVariant = t("common.tie");
+        recommendationReason = t("developerView.recommendation.equalPreferences");
+      }
+    } else if (countA > 0 || countB > 0) {
       if (countA > countB) {
         recommendedVariant = "A";
         recommendationReason = t("developerView.recommendation.morePreferences");
@@ -223,13 +280,17 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       questionAveragesA,
       questionAveragesB,
       globalAverage,
+      globalAverageA,
+      globalAverageB,
       sortedQuestions,
+      questionsForResults,
       worstQuestion,
       worstValue,
       bestQuestion,
       bestValue,
       recommendedVariant,
       recommendationReason,
+      generateRecommendation,
     };
   }
 
@@ -237,17 +298,36 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
     const experimentResults = results[experimentId];
     const experiment = experiments.find((e) => e.id === experimentId);
 
-    if (!experimentResults || !experimentResults.evaluations) return;
+    if (!experimentResults || !experimentResults.evaluations || !experiment) return;
 
-    const customQuestionList = safeParseArray(experiment?.custom_questions);
+    const isABExperiment = experiment.type === "ab";
+    const customQuestionList = safeParseArray(experiment.custom_questions);
+    const questionsForExport = isABExperiment
+      ? abStandardQuestions
+      : singleStandardQuestions;
+
+    const standardHeaders = isABExperiment
+      ? ["A", "B"].flatMap((variant) =>
+          questionsForExport.map((question) => {
+            const answerKey = getABAnswerKey(variant, question.id);
+            return `${answerKey}: ${getQuestionLabel(
+              t,
+              "ab",
+              question.id,
+              variant
+            )}`;
+          })
+        )
+      : questionsForExport.map(
+          (question) =>
+            `${question.id}: ${getQuestionLabel(t, "single", question.id)}`
+        );
 
     const headers = [
       "id",
       "preferred_variant",
       "comment",
-      ...standardQuestions.map((question) =>
-        `${question.id}: ${t(`evaluation.standardQuestions.${question.id}`)}`
-      ),
+      ...standardHeaders,
       ...customQuestionList.map((question, index) => `custom_${index + 1}: ${question}`),
     ];
 
@@ -255,11 +335,22 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       const standardAnswers = safeParseObject(evaluation.standard_answers);
       const customAnswers = safeParseObject(evaluation.custom_answers);
 
+      const standardValues = isABExperiment
+        ? ["A", "B"].flatMap((variant) =>
+            questionsForExport.map((question) => {
+              const answerKey = getABAnswerKey(variant, question.id);
+              return standardAnswers[answerKey] || "";
+            })
+          )
+        : questionsForExport.map(
+            (question) => standardAnswers[question.id] || ""
+          );
+
       return [
         evaluation.id,
         evaluation.preferred_variant || "",
         evaluation.comment || "",
-        ...standardQuestions.map((question) => standardAnswers[question.id] || ""),
+        ...standardValues,
         ...customQuestionList.map((question) => customAnswers[question] || ""),
       ].map(escapeCSV);
     });
@@ -286,13 +377,24 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
     const experimentResults = results[experimentId];
     const experiment = experiments.find((e) => e.id === experimentId);
 
-    if (!experimentResults || !experimentResults.evaluations) return;
+    if (!experimentResults || !experimentResults.evaluations || !experiment) return;
 
     const evaluations = experimentResults.evaluations;
+    const isABExperiment = experiment.type === "ab";
+    const questionsForExport = isABExperiment
+      ? abStandardQuestions
+      : singleStandardQuestions;
 
-    function averageForQuestion(items, questionId) {
+    function averageForQuestion(items, questionId, variant = null) {
       const values = items
-        .map((evaluation) => safeParseObject(evaluation.standard_answers)[questionId])
+        .map((evaluation) => {
+          const answers = safeParseObject(evaluation.standard_answers);
+          const answerKey = variant
+            ? getABAnswerKey(variant, questionId)
+            : questionId;
+
+          return answers[answerKey];
+        })
         .filter((value) => value !== undefined && value !== null && value !== "")
         .map(Number);
 
@@ -305,26 +407,33 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
     let csvContent = "";
 
-    if (experiment?.type === "ab") {
-      const evalA = evaluations.filter((e) => e.preferred_variant === "A");
-      const evalB = evaluations.filter((e) => e.preferred_variant === "B");
+    if (isABExperiment) {
+      const countA = evaluations.filter((e) => e.preferred_variant === "A").length;
+      const countB = evaluations.filter((e) => e.preferred_variant === "B").length;
 
       const headers = [
         "variant",
-        "count",
-        ...standardQuestions.map((question) => `avg_${question.id}`),
+        "evaluations",
+        "preference_votes",
+        ...questionsForExport.map((question) => `avg_${question.id}`),
       ];
 
       const rows = [
         [
           "A",
-          evalA.length,
-          ...standardQuestions.map((question) => averageForQuestion(evalA, question.id)),
+          evaluations.length,
+          countA,
+          ...questionsForExport.map((question) =>
+            averageForQuestion(evaluations, question.id, "A")
+          ),
         ],
         [
           "B",
-          evalB.length,
-          ...standardQuestions.map((question) => averageForQuestion(evalB, question.id)),
+          evaluations.length,
+          countB,
+          ...questionsForExport.map((question) =>
+            averageForQuestion(evaluations, question.id, "B")
+          ),
         ],
       ];
 
@@ -336,13 +445,15 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       const headers = [
         "group",
         "count",
-        ...standardQuestions.map((question) => `avg_${question.id}`),
+        ...questionsForExport.map((question) => `avg_${question.id}`),
       ];
 
       const row = [
         "all",
         evaluations.length,
-        ...standardQuestions.map((question) => averageForQuestion(evaluations, question.id)),
+        ...questionsForExport.map((question) =>
+          averageForQuestion(evaluations, question.id)
+        ),
       ];
 
       csvContent = [
@@ -450,26 +561,6 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
 
     try {
       const payload = {
-          title: form.title,
-          description: form.description,
-          short_description: form.short_description,
-          instructions: form.instructions,
-          type: form.type,
-          category: form.category,
-          created_by: currentUser?.name || t("common.roles.developer"),
-          created_by_id: currentUser?.id || null,
-          status: "pending",
-          variant_a_html: form.variant_a_html,
-          variant_b_html: form.type === "ab" ? form.variant_b_html : "",
-          custom_questions: customQuestions,
-        };
-
-        if (editingExperiment) {
-          await onUpdateExperiment(editingExperiment.id, payload);
-        } else {
-          await onCreate(payload);
-        }
-      await onCreate({
         title: form.title,
         description: form.description,
         short_description: form.short_description,
@@ -482,7 +573,13 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
         variant_a_html: form.variant_a_html,
         variant_b_html: form.type === "ab" ? form.variant_b_html : "",
         custom_questions: customQuestions,
-      });
+      };
+
+      if (editingExperiment) {
+        await onUpdateExperiment(editingExperiment.id, payload);
+      } else {
+        await onCreate(payload);
+      }
 
       setShowConfirmCreate(false);
 
@@ -537,6 +634,8 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       questionAveragesA,
       questionAveragesB,
       globalAverage,
+      globalAverageA,
+      globalAverageB,
       sortedQuestions,
       worstQuestion,
       worstValue,
@@ -544,25 +643,18 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
       bestValue,
       recommendedVariant,
       recommendationReason,
+      generateRecommendation,
     } = getComputedResults(selectedExperiment);
 
-    function generateRecommendation() {
-      if (!experimentResults || experimentResults.total === 0) return null;
-      if (!worstQuestion || worstValue === null || worstValue === undefined) return null;
-
-      if (selectedExperiment.type === "ab" && countA !== countB) {
-        const winner = countA > countB ? "A" : "B";
-
-        return t("developerView.recommendation.abWeakness", {
-          variant: winner,
-          question: t(`evaluation.standardQuestions.${worstQuestion.id}`).toLowerCase(),
+    const questionLabel = (question, variant = null) => {
+      if (selectedExperiment.type === "ab" && !variant) {
+        return t(`evaluation.abQuestions.${question.id}`, {
+          variant: t("common.experimentTypes.ab"),
         });
       }
 
-      return t("developerView.recommendation.mainProblem", {
-        question: t(`evaluation.standardQuestions.${worstQuestion.id}`).toLowerCase(),
-      });
-    }
+      return getQuestionLabel(t, selectedExperiment.type, question.id, variant);
+    };
 
     const approvedQuestions = safeParseArray(selectedExperiment.approved_custom_questions);
 
@@ -670,7 +762,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
             )}
           </div>
 
-          <div className="card detail-block">
+          <div className="card detail-block detail-block-wide">
             <h3>{t("developerView.globalSummary")}</h3>
 
             {loadingResults[selectedExperiment.id] && <p>{t("common.loading")}</p>}
@@ -731,8 +823,7 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                       {t("developerView.worstIssueHelp")}
                     </p>
                     <p>
-                      {t(`evaluation.standardQuestions.${worstQuestion.id}`)}{" "}
-                      ({worstValue.toFixed(2)} / 5)
+                      {questionLabel(worstQuestion)} ({worstValue.toFixed(2)} / 5)
                     </p>
                   </div>
                 )}
@@ -744,42 +835,122 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                       {t("developerView.bestPointHelp")}
                     </p>
                     <p>
-                      {t(`evaluation.standardQuestions.${bestQuestion.id}`)}{" "}
-                      ({bestValue.toFixed(2)} / 5)
+                      {questionLabel(bestQuestion)} ({bestValue.toFixed(2)} / 5)
                     </p>
                   </div>
                 )}
 
                 <div className="card detail-block detail-block-wide">
-                  <h3>{t("developerView.standardResults")}</h3>
+                  <h3>
+                    {selectedExperiment.type === "ab"
+                      ? "Resultados por variante"
+                      : t("developerView.standardResults")}
+                  </h3>
 
-                  <div className="standard-results">
-                    {sortedQuestions.map((question) => {
-                      const value = questionAverages[question.id];
-                      if (value === null || value === undefined) return null;
-
-                      return (
-                        <div key={question.id} className="metric-block">
+                  {selectedExperiment.type === "ab" ? (
+                    <div className="ab-metrics">
+                      {globalAverageA !== null && (
+                        <div>
                           <p>
                             <strong>
-                              {t(`evaluation.standardQuestions.${question.id}`)}
-                            </strong>{" "}
-                            {value.toFixed(2)} / 5
+                              {t("common.variantA")} · {globalAverageA.toFixed(2)} / 5
+                            </strong>
                           </p>
 
-                          <div className="metric-bar">
-                            <div
-                              className="metric-fill"
-                              style={{
-                                width: `${(value / 5) * 100}%`,
-                                backgroundColor: getMetricColor(value),
-                              }}
-                            />
+                          <div className="standard-results">
+                            {sortedQuestions.map((question) => {
+                              const value = questionAveragesA[question.id];
+                              if (value === null || value === undefined) return null;
+
+                              return (
+                                <div key={`a-${question.id}`} className="metric-block">
+                                  <p>
+                                    <strong>
+                                      {questionLabel(question, "A")} {value.toFixed(2)} / 5
+                                    </strong>{" "}
+                                  </p>
+
+                                  <div className="metric-bar">
+                                    <div
+                                      className="metric-fill"
+                                      style={{
+                                        width: `${(value / 5) * 100}%`,
+                                        backgroundColor: getMetricColor(value),
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
+                      )}
+
+                      {globalAverageB !== null && (
+                        <div>
+                          <p>
+                            <strong>
+                              {t("common.variantB")} · {globalAverageB.toFixed(2)} / 5
+                            </strong>
+                          </p>
+
+                          <div className="standard-results">
+                            {sortedQuestions.map((question) => {
+                              const value = questionAveragesB[question.id];
+                              if (value === null || value === undefined) return null;
+
+                              return (
+                                <div key={`b-${question.id}`} className="metric-block">
+                                  <p>
+                                    <strong>
+                                      {questionLabel(question, "B")} {value.toFixed(2)} / 5
+                                    </strong>{" "}
+                                  </p>
+
+                                  <div className="metric-bar">
+                                    <div
+                                      className="metric-fill"
+                                      style={{
+                                        width: `${(value / 5) * 100}%`,
+                                        backgroundColor: getMetricColor(value),
+                                      }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="standard-results">
+                      {sortedQuestions.map((question) => {
+                        const value = questionAverages[question.id];
+                        if (value === null || value === undefined) return null;
+
+                        return (
+                          <div key={question.id} className="metric-block">
+                            <p>
+                              <strong>
+                                {questionLabel(question)} {value.toFixed(2)} / 5
+                              </strong>{" "}
+                            </p>
+
+                            <div className="metric-bar">
+                              <div
+                                className="metric-fill"
+                                style={{
+                                  width: `${(value / 5) * 100}%`,
+                                  backgroundColor: getMetricColor(value),
+                                }}
+                              />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
 
               {selectedExperiment.type === "ab" && (countA + countB) > 0 && (
@@ -804,42 +975,6 @@ function DeveloperView({ experiments, currentUser, onCreate, onUpdateExperiment,
                       {countA > countB ? "A" : countB > countA ? "B" : t("common.tie")}
                     </strong>
                   </p>
-
-                  {(countA > 0 || countB > 0) && (
-                    <div className="ab-metrics">
-                      <p><strong>{t("developerView.variantDetail")}:</strong></p>
-
-                      {countA > 0 && (
-                        <div>
-                          <p><strong>{t("common.variantA")}</strong></p>
-                          {sortedQuestions.map((question) => {
-                            const value = questionAveragesA[question.id];
-                            if (value === null || value === undefined) return null;
-                            return (
-                              <p key={question.id}>
-                                {question.id.toUpperCase()}: {value.toFixed(2)}
-                              </p>
-                            );
-                          })}
-                        </div>
-                      )}
-
-                      {countB > 0 && (
-                        <div>
-                          <p><strong>{t("common.variantB")}</strong></p>
-                          {sortedQuestions.map((question) => {
-                            const value = questionAveragesB[question.id];
-                            if (value === null || value === undefined) return null;
-                            return (
-                              <p key={question.id}>
-                                {question.id.toUpperCase()}: {value.toFixed(2)}
-                              </p>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                   {recommendedVariant && (
                     <div className="recommendation-box">

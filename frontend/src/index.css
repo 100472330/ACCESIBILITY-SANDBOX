@@ -80,7 +80,8 @@ p {
 }
 
 .app {
-  max-width: 1000px;
+  width: 100%;
+  max-width: 1400px;
   margin: 0 auto;
   padding: var(--space-6);
 }
@@ -1114,8 +1115,10 @@ button:disabled {
 
 .developer-detail-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
   gap: 1.5rem;
+  align-items: start;
+  width: 100%;
 }
 
 .detail-block {
@@ -1124,6 +1127,31 @@ button:disabled {
 
 .detail-block-wide {
   grid-column: 1 / -1;
+}
+
+.ab-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1.25rem;
+  margin-top: 1rem;
+}
+
+.standard-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+  gap: 1rem;
+}
+
+.metric-block {
+  width: 100%;
+}
+
+.metric-block p {
+  margin-top: 0;
+}
+
+.recommendation-box {
+  margin-top: 1.25rem;
 }
 
 .experiment-card-header {

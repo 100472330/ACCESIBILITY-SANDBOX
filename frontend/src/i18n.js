@@ -287,15 +287,20 @@ const resources = {
           duplicateQuestion: "Esta pregunta personalizada ya ha sido añadida.",
           maxQuestions: "Solo puedes añadir un máximo de 3 preguntas personalizadas.",
         },
-        recommendation: {
-          priority: "Revisar prioritariamente este aspecto: \"{{question}}\". La puntuación es baja ({{score}} / 5), por lo que puede estar afectando a la comprensión del componente.",
-          highScore: "El componente presenta una valoración global alta. Se recomienda mantener el diseño actual y revisar únicamente comentarios cualitativos.",
-          improve: "El componente tiene margen de mejora. El primer aspecto a revisar debería ser: \"{{question}}\".",
-          abWeakness: "La variante {{variant}} es preferida por los usuarios, pero existe una debilidad clara en: \"{{question}}\".",
-          mainProblem: "El principal problema detectado está relacionado con: \"{{question}}\".",
-          morePreferences: "ha recibido más preferencias por parte de los usuarios.",
-          equalPreferences: "ambas variantes han recibido el mismo número de preferencias.",
-        },
+       recommendation: {
+        priority:
+          "Este aspecto obtiene una valoración baja ({{score}} / 5): {{question}}. Conviene revisarlo de forma prioritaria.",
+        highScore:
+          "El componente presenta una valoración global alta. Se recomienda mantener el diseño actual y revisar únicamente comentarios cualitativos.",
+        improve:
+          "La dimensión con menor valoración es: {{question}}. Conviene revisar este punto para mejorar la comprensión del componente.",
+        betterAverage:
+          "La recomendación se basa en la variante con mejor media global en las respuestas.",
+        morePreferences:
+          "La recomendación se basa en la variante que ha recibido más preferencias por parte de los usuarios.",
+        equalPreferences:
+          "Las preferencias de los usuarios están equilibradas, por lo que no hay una variante claramente ganadora.",
+      },
       },
       public: {
         nav: {
@@ -714,13 +719,18 @@ const resources = {
           maxQuestions: "You can add a maximum of 3 custom questions.",
         },
         recommendation: {
-          priority: "Prioritize reviewing this aspect: \"{{question}}\". The score is low ({{score}} / 5), so it may be affecting comprehension of the component.",
-          highScore: "The component has a high overall rating. Keeping the current design and reviewing only qualitative comments is recommended.",
-          improve: "The component has room for improvement. The first aspect to review should be: \"{{question}}\".",
-          abWeakness: "Variant {{variant}} is preferred by users, but there is a clear weakness in: \"{{question}}\".",
-          mainProblem: "The main detected issue is related to: \"{{question}}\".",
-          morePreferences: "has received more user preferences.",
-          equalPreferences: "both variants received the same number of preferences.",
+          priority:
+            "This aspect received a low score ({{score}} / 5): {{question}}. It should be reviewed as a priority.",
+          highScore:
+            "The component has a high overall score. The current design can be maintained while reviewing qualitative comments.",
+          improve:
+            "The lowest-rated dimension is: {{question}}. This point should be reviewed to improve component comprehension.",
+          betterAverage:
+            "The recommendation is based on the variant with the highest overall average score.",
+          morePreferences:
+            "The recommendation is based on the variant preferred by more users.",
+          equalPreferences:
+            "User preferences are balanced, so there is no clearly preferred variant.",
         },
       },
       public: {
