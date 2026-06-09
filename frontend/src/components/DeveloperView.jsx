@@ -1460,6 +1460,7 @@ function DeveloperView({
 
                             {[
                               "draft",
+                              "approved",
                               "pending",
                               "rejected",
                             ].includes(experiment.status) && (
