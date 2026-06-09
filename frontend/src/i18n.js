@@ -274,6 +274,8 @@ const resources = {
         confirmSend: "Confirmar envío",
         archiveTitle: "Archivar experimento",
         archiveMessage: "¿Seguro que quieres archivar \"{{title}}\"? Dejará de aparecer en tus experimentos.",
+        exportDetailedCsv: "Descargar CSV detallado",
+        exportAggregatedCsv: "Descargar CSV agregado",
         validation: {
           titleRequired: "El título del experimento es obligatorio.",
           descriptionRequired: "La descripción del experimento es obligatoria.",
@@ -705,6 +707,8 @@ const resources = {
         confirmSend: "Confirm submission",
         archiveTitle: "Archive experiment",
         archiveMessage: "Are you sure you want to archive \"{{title}}\"? It will no longer appear in your experiments.",
+        exportDetailedCsv: "Download detailed CSV",
+        exportAggregatedCsv: "Download aggregated CSV",
         validation: {
           titleRequired: "The experiment title is required.",
           descriptionRequired: "The experiment description is required.",
@@ -732,6 +736,7 @@ const resources = {
           equalPreferences:
             "User preferences are balanced, so there is no clearly preferred variant.",
         },
+        
       },
       public: {
         nav: {

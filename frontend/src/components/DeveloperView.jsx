@@ -806,6 +806,26 @@ function DeveloperView({
                   )}
                 </div>
 
+                {experimentResults.total > 0 && (
+                  <div className="detail-actions">
+                    <button
+                      type="button"
+                      className="export-btn"
+                      onClick={() => exportResultsToCSV(selectedExperiment.id)}
+                    >
+                      {t("developerView.exportDetailedCsv")}
+                    </button>
+
+                    <button
+                      type="button"
+                      className="export-btn"
+                      onClick={() => exportAggregatedResultsToCSV(selectedExperiment.id)}
+                    >
+                      {t("developerView.exportAggregatedCsv")}
+                    </button>
+                  </div>
+                )}
+
                 {experimentResults.total === 0 && (
                  <div className="empty-state">
                   <div className="empty-state-icon">＋</div>
