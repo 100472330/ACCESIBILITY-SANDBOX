@@ -3,23 +3,15 @@ import { useTranslation } from "react-i18next";
 import ExperimentPreview from "./ExperimentPreview";
 import EvaluationForm from "./EvaluationForm";
 import ConfirmModal from "./ConfirmModal";
+import { buildStandardAnswers } from "../utils/evaluationQuestions";
 
-const initialForm = {
-  standard_answers: {
-    q1: 3,
-    q2: 3,
-    q3: 3,
-    q4: 3,
-    q5: 3,
-    q6: 3,
-    q7: 3,
-    q8: 3,
-    q9: 3,
-    q10: 3,
-  },
-  preferred_variant: "",
-  comment: "",
-};
+function buildInitialForm(type = "single") {
+  return {
+    standard_answers: buildStandardAnswers(type),
+    preferred_variant: "",
+    comment: "",
+  };
+}
 
 function safeParseArray(value) {
   if (Array.isArray(value)) return value;
@@ -35,6 +27,7 @@ function safeParseArray(value) {
 
 function UserView({
   experiments,
+  currentUser,
   onEvaluate,
   evaluatedExperimentIds = [],
   myEvaluations = [],
@@ -44,7 +37,7 @@ function UserView({
   const [selectedCategory, setSelectedCategory] = useState("");
   const [customAnswers, setCustomAnswers] = useState({});
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(buildInitialForm());
 
   const selectedExperiment = experiments.find(
     (experiment) => experiment.id === selectedExperimentId
@@ -74,9 +67,16 @@ function UserView({
     setCustomAnswers({});
   }
 
+  function resetEvaluationForm(type = "single") {
+    setForm(buildInitialForm(type));
+    setCustomAnswers({});
+  }
+
   function openExperiment(experimentId) {
+    const experiment = experiments.find((item) => item.id === experimentId);
+
     setSelectedExperimentId(experimentId);
-    resetEvaluationForm();
+    resetEvaluationForm(experiment?.type || "single");
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -91,6 +91,34 @@ function UserView({
     setSelectedExperimentId(null);
     resetEvaluationForm();
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function getDerivedMetrics(experimentType, answers) {
+    const average = (ids) =>
+      ids.reduce((sum, id) => sum + Number(answers[id] || 0), 0) / ids.length;
+
+    if (experimentType === "ab") {
+      return {
+        clarity: average([
+          "a_q1",
+          "a_q2",
+          "a_q3",
+          "a_q4",
+          "b_q1",
+          "b_q2",
+          "b_q3",
+          "b_q4",
+        ]),
+        comprehension: average(["a_q1", "a_q3", "b_q1", "b_q3"]),
+        cognitiveLoad: 6 - average(["a_q5", "b_q5"]),
+      };
+    }
+
+    return {
+      clarity: average(["q1", "q2", "q3", "q8"]),
+      comprehension: average(["q4", "q5", "q7"]),
+      cognitiveLoad: 6 - average(["q6", "q9", "q10"]),
+    };
   }
 
   function handleChange(event) {
@@ -122,34 +150,22 @@ function UserView({
     }
 
     setShowConfirmSubmit(true);
-
-    const answers = form.standard_answers;
-
-    const average = (ids) =>
-      ids.reduce((sum, id) => sum + Number(answers[id] || 0), 0) / ids.length;
-
-    const derivedClarity = average(["q1", "q2", "q3", "q8"]);
-    const derivedComprehension = average(["q4", "q5", "q7"]);
-    const derivedCognitiveLoad = 6 - average(["q6", "q9", "q10"]);
   }
 
   async function confirmSubmitEvaluation() {
-    if (!selectedExperiment) return;
+    if (!selectedExperiment || !currentUser) return;
 
-    const answers = form.standard_answers;
-
-    const average = (ids) =>
-      ids.reduce((sum, id) => sum + Number(answers[id] || 0), 0) / ids.length;
-
-    const derivedClarity = average(["q1", "q2", "q3", "q8"]);
-    const derivedComprehension = average(["q4", "q5", "q7"]);
-    const derivedCognitiveLoad = 6 - average(["q6", "q9", "q10"]);
+    const { clarity, comprehension, cognitiveLoad } = getDerivedMetrics(
+      selectedExperiment.type,
+      form.standard_answers
+    );
 
     await onEvaluate({
       experiment_id: selectedExperiment.id,
-      clarity: Number(derivedClarity.toFixed(2)),
-      comprehension: Number(derivedComprehension.toFixed(2)),
-      cognitive_load: Number(derivedCognitiveLoad.toFixed(2)),
+      user_id: currentUser.id,
+      clarity: Number(clarity.toFixed(2)),
+      comprehension: Number(comprehension.toFixed(2)),
+      cognitive_load: Number(cognitiveLoad.toFixed(2)),
       preferred_variant: form.preferred_variant || null,
       comment: form.comment,
       standard_answers: form.standard_answers,

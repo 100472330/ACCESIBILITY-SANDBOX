@@ -124,6 +124,13 @@ const resources = {
           q9: "El componente reduce la posibilidad de cometer errores.",
           q10: "La experiencia general resulta sencilla y poco demandante.",
         },
+        abQuestions: {
+          q1: "En la {{variant}}, el propósito del componente se entiende rápidamente.",
+          q2: "En la {{variant}}, la acción principal que debe realizarse resulta fácil de identificar.",
+          q3: "En la {{variant}}, los textos, etiquetas e instrucciones son claros y fáciles de comprender.",
+          q4: "En la {{variant}}, la organización visual ayuda a localizar la información importante.",
+          q5: "En la {{variant}}, la interacción resulta sencilla y exige poco esfuerzo mental.",
+        },
         form: {
           title: "Evaluar experimento",
           standardTitle: "Evaluación estándar",
@@ -542,6 +549,13 @@ const resources = {
           q8: "Button, field, and link names are clear.",
           q9: "The component reduces the possibility of making mistakes.",
           q10: "The overall experience feels simple and not very demanding.",
+        },
+        abQuestions: {
+          q1: "In {{variant}}, the purpose of the component is quickly understood.",
+          q2: "In {{variant}}, the main action is easy to identify.",
+          q3: "In {{variant}}, the texts, labels and instructions are clear and easy to understand.",
+          q4: "In {{variant}}, the visual organization helps users locate the important information.",
+          q5: "In {{variant}}, the interaction feels simple and requires little mental effort.",
         },
         form: {
           title: "Evaluate experiment",

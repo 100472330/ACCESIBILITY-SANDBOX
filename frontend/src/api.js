@@ -64,14 +64,13 @@ export async function updateExperimentStatus(id, status, moderationComment = "")
 export async function createEvaluation(payload) {
   const response = await fetch(`${API_BASE_URL}/evaluations`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: getAuthHeaders(),
     body: JSON.stringify(payload),
   });
 
   if (!response.ok) {
-    throw new Error("Failed to create evaluation");
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || "Failed to create evaluation");
   }
 
   return response.json();
